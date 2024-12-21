@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Entry {
+  id               Int          @id @default(autoincrement())
+  race_id          Int
+  horse_master_id  Int
+  bracket_number   Int
+  horse_number     Int
+  sex              String
+  age              Int
+  jockey_master_id Int
+  jockey_weight    Float
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @default(now())
+  HorseMaster      HorseMaster  @relation(fields: [horse_master_id], references: [id])
+  JockeyMaster     JockeyMaster @relation(fields: [jockey_master_id], references: [id])
+  Race             Race         @relation(fields: [race_id], references: [id])
+
+  @@unique([race_id, horse_master_id])
+  @@index([horse_master_id], map: "horse_id")
+  @@index([jockey_master_id], map: "jockey_id")
+}
+
+model HorseMaster {
+  id                Int      @id @default(autoincrement())
+  netkeiba_horse_id String   @unique
+  name              String
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now())
+  Entry             Entry[]
+}
+
+model JockeyMaster {
+  id                 Int      @id @default(autoincrement())
+  netkeiba_jockey_id String   @unique
+  name               String
+  created_at         DateTime @default(now())
+  updated_at         DateTime @default(now())
+  Entry              Entry[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model Predict {
+  id               BigInt    @id(map: "predicts_pkey") @default(autoincrement())
+  netkeiba_race_id String    @default("") @db.VarChar
+  horse_number     Int       @db.SmallInt
+  score            Float
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model Race {
+  id               Int       @id @default(autoincrement())
+  netkeiba_race_id String    @unique
+  track            String
+  number           Int
+  name             String
+  course_type      String
+  turn             String?
+  distance         Int
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  race_time        DateTime? @db.Timestamp(6)
+  Entry            Entry[]
+}
