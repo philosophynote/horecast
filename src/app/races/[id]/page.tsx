@@ -2,11 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/ca
 import { EntryTable } from "@/app/components/EntryTable"
 import { Race, Entry, Predict } from "@prisma/client"
 
+type EntryWithMasters = Entry & {
+  HorseMaster: { name: string }
+  JockeyMaster: { name: string }
+}
+
 type RaceWithEntriesAndPredicts = Race & {
-  entries: (Entry & {
-    horse_master: { name: string }
-    jockey_master: { name: string }
-  })[]
+  entries: EntryWithMasters[]
   predicts: Predict[]
 }
 
