@@ -26,7 +26,5 @@ export async function GET(
     return NextResponse.json({ error: 'Race not found' }, { status: 404 });
   }
 
-
-  console.log(race)
   return NextResponse.json(race);
 }

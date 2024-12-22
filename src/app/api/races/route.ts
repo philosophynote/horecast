@@ -17,7 +17,5 @@ export async function GET() {
     orderBy: { race_time: 'asc' },
   });
 
-
-  console.log(races)
   return NextResponse.json(races);
 }
