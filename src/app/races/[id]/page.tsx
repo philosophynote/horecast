@@ -12,6 +12,19 @@ type RaceWithEntriesAndPredicts = Race & {
   predicts: Predict[]
 }
 
+function getGradientClass(courseType: string): string {
+  switch (courseType) {
+    case "芝":
+      return "bg-gradient-to-l from-[#8DB998] to-white"
+    case "ダート":
+      return "bg-gradient-to-l from-[#D6A67A] to-white"
+    case "障害":
+      return "bg-gradient-to-l from-[#7DBCCF] to-white"
+    default:
+      return ""
+  }
+}
+
 async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredicts> {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/races/${id}`, { cache: 'no-store' });
   if (!res.ok) {
@@ -24,6 +37,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
   const { id } = await params;
   const race = await getRaceWithEntries(id)
 
+
   if (!race) {
     return <div>レースが見つかりません</div>
   }
@@ -32,8 +46,8 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
   const formattedTime = raceTime ? raceTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : "N/A"
 
   return (
-    <main className="container mx-auto py-6">
-      <Card className="mb-6">
+    <main className="container mx-auto py-6" >
+      <Card className={`mb-6 hover:shadow-lg transition-shadow duration-200 ${getGradientClass(race.course_type)}`}>
         <CardHeader>
           <CardTitle>{race.name}</CardTitle>
         </CardHeader>
