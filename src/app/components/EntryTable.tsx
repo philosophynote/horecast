@@ -26,7 +26,7 @@ export function EntryTable({ entries, predicts }: Props) {
     return index < marks.length ? marks[index] : "×"
   }
   const sortedEntries = [...entries].sort(sortEntries)
-  console.log(entries)
+
   return (
     
     <Table>
