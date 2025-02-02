@@ -11,6 +11,13 @@ type Props = {
   predicts: Predict[]
 }
 
+const sortEntries = (a: EntryWithMasters, b: EntryWithMasters) => {
+  if (a.bracket_number !== b.bracket_number) {
+    return a.bracket_number - b.bracket_number
+  }
+  return a.horse_number - b.horse_number
+}
+
 export function EntryTable({ entries, predicts }: Props) {
   const getPredictMark = (horseNumber: number) => {
     const sortedPredicts = predicts.sort((a, b) => b.score - a.score)
@@ -18,7 +25,8 @@ export function EntryTable({ entries, predicts }: Props) {
     const marks = ["◎", "○", "▲", "△", "×"]
     return index < marks.length ? marks[index] : "×"
   }
-  console.log(entries)
+  const sortedEntries = [...entries].sort(sortEntries)
+
   return (
     
     <Table>
@@ -35,7 +43,7 @@ export function EntryTable({ entries, predicts }: Props) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {entries.map((entry) => (
+        {sortedEntries.map((entry) => (
           <TableRow key={entry.id}>
             <TableCell>{entry.bracket_number}</TableCell>
             <TableCell>{entry.horse_number}</TableCell>
