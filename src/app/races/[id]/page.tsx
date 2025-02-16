@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { EntryTable } from "@/app/components/EntryTable"
 import { Race, Entry, Predict } from "@prisma/client"
+import { NavigationButtons } from "@/app/components/NavigationButtons"
 
 type EntryWithMasters = Entry & {
   HorseMaster: { name: string }
@@ -20,9 +21,17 @@ async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredict
   return res.json();
 }
 
+async function getNavigation(id: number): Promise<{ prevRaceId?: number; nextRaceId?: number }> {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/races/${id}/navigation`, { cache: "no-store" })
+  if (!res.ok) {
+    throw new Error("Failed to fetch navigation")
+  }
+  return res.json()
+}
+
 export default async function RacePage({ params }: { params: Promise<{ id: number }> }) {
   const { id } = await params;
-  const race = await getRaceWithEntries(id)
+  const [race, navigation] = await Promise.all([getRaceWithEntries(id), getNavigation(id)])
 
   if (!race) {
     return <div>レースが見つかりません</div>
@@ -46,6 +55,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
         </CardContent>
       </Card>
       <EntryTable entries={race.entries} predicts={race.predicts} />
+      <NavigationButtons prevRaceId={navigation.prevRaceId} nextRaceId={navigation.nextRaceId} />
     </main>
   )
 }
