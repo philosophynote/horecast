@@ -3,11 +3,14 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const id = Number.parseInt(params.id)
+export async function GET(
+  request: Request, 
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
 
   const currentRace = await prisma.race.findUnique({
-    where: { id },
+    where: { id: Number(id) },
     select: { race_time: true },
   })
 
