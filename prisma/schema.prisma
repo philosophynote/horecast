@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Entry {
@@ -72,4 +73,20 @@ model Race {
   race_time        DateTime? @db.Timestamp(6)
   entries          Entry[]
   predicts         Predict[]
+  results          Result[]
+}
+
+model Result {
+  id               Int       @id @default(autoincrement())
+  race_id          Int
+  rank             String
+  frame_number     Int
+  horse_number     Int
+  horse_name       String
+  sex_name         String
+  favorite         Int?
+  odds             Float?
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  Race             Race      @relation(fields: [race_id], references: [id])
 }

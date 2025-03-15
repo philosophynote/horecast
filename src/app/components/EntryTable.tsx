@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
 import { Entry, Predict } from "@prisma/client"
+import { useMemo } from "react"
 
 type EntryWithMasters = Entry & {
   HorseMaster: { name: string }
@@ -19,16 +20,20 @@ const sortEntries = (a: EntryWithMasters, b: EntryWithMasters) => {
 }
 
 export function EntryTable({ entries, predicts }: Props) {
-  const getPredictMark = (horseNumber: number) => {
-    const sortedPredicts = predicts.sort((a, b) => b.score - a.score)
-    const index = sortedPredicts.findIndex(p => p.horse_number === horseNumber)
+  const predictMarks = useMemo(() => {
+    const sortedPredicts = [...predicts].sort((a, b) => b.score - a.score)
     const marks = ["◎", "○", "▲", "△", "×"]
-    return index < marks.length ? marks[index] : "×"
-  }
+    return new Map(
+      sortedPredicts.map((predict, index) => [
+        predict.horse_number,
+        index < marks.length ? marks[index] : "×"
+      ])
+    )
+  }, [predicts])
+
   const sortedEntries = [...entries].sort(sortEntries)
 
   return (
-    
     <Table>
       <TableHeader>
         <TableRow>
@@ -52,7 +57,7 @@ export function EntryTable({ entries, predicts }: Props) {
             <TableCell>{entry.age}</TableCell>
             <TableCell>{entry.JockeyMaster?.name ?? "不明"}</TableCell>
             <TableCell>{entry.jockey_weight}</TableCell>
-            <TableCell>{getPredictMark(entry.horse_number)}</TableCell>
+            <TableCell>{predictMarks.get(entry.horse_number) ?? "×"}</TableCell>
           </TableRow>
         ))}
       </TableBody>
