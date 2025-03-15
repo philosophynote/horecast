@@ -22,7 +22,6 @@ const sortEntries = (a: EntryWithMasters, b: EntryWithMasters) => {
 export function EntryTable({ entries, predicts }: Props) {
   const predictMarks = useMemo(() => {
     const sortedPredicts = [...predicts].sort((a, b) => b.score - a.score)
-    console.log(sortedPredicts)
     const marks = ["◎", "○", "▲", "△", "×"]
     return new Map(
       sortedPredicts.map((predict, index) => [
