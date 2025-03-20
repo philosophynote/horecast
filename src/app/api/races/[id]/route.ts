@@ -19,7 +19,8 @@ export async function GET(
         },
       },
       predicts: true,
-      results: true
+      results: true,
+      payouts: true,
     },
   });
 

@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
+import { Card } from "@/app/components/ui/card"
 import { Race } from "@prisma/client"
 import Link from "next/link"
+import { Badge } from "@/app/components/ui/badge"
 
 function getGradientClass(courseType: string): string {
   switch (courseType) {
@@ -21,15 +22,24 @@ export function RaceCard({ race }: { race: Race }) {
 
   return (
     <Link href={`/races/${race.id}`} className="block mb-4">
-      <Card className={`hover:shadow-lg transition-shadow duration-200 ${getGradientClass(race.course_type)}`}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">{race.name}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-700">
-            {formattedTime} | R{race.number} | {race.course_type} | {race.distance}m
-          </p>
-        </CardContent>
+      <Card className={`hover:shadow-lg transition-shadow duration-200 ${getGradientClass(race.course_type)} relative min-h-[120px]`}>
+        <div className="flex flex-col h-full justify-between">
+          <div className="p-4">
+            <div className="flex items-center gap-2">
+              <Badge className="w-fit">
+                {race.number}R
+              </Badge>
+              <h3 className="text-2xl font-bold">
+                {race.name}
+              </h3>
+            </div>
+          </div>
+          <div className="p-4 self-end">
+            <p className="text-s">
+              {formattedTime} {race.course_type}{race.distance}m
+            </p>
+          </div>
+        </div>
       </Card>
     </Link>
   )
