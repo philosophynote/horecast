@@ -73,19 +73,16 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
           </div>
         </CardContent>
       </Card>
-      <h2 className="text-2xl font-bold mb-4">出馬表</h2>
       <EntryTable entries={race.entries} predicts={race.predicts} />
       <RecommendedBets entries={race.entries} predicts={race.predicts}  payouts={race.payouts} />
       <div className="mt-6 flex gap-6">
         {race.results && race.results.length > 0 && (
           <div className="flex-1">
-            <h2 className="text-2xl font-bold mb-4">レース結果</h2>
             <RaceResultTable results={race.results} />
           </div>
         )}
         {race.payouts && race.payouts.length > 0 && (
           <div className="flex-1">
-            <h2 className="text-2xl font-bold mb-4">配当</h2>
             <PayoutTable payouts={race.payouts} />
           </div>
         )}
