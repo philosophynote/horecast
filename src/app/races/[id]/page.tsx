@@ -3,6 +3,7 @@ import { EntryTable } from "@/app/components/EntryTable"
 import { RaceResultTable } from "@/app/components/RaceResultTable"
 import { Race, Entry, Predict, Result } from "@prisma/client"
 import { NavigationButtons } from "@/app/components/NavigationButtons"
+import { RecommendedBets } from "@/app/components/RecommendedBet"
 
 type EntryWithMasters = Entry & {
   HorseMaster: { name: string }
@@ -71,6 +72,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
         </CardContent>
       </Card>
       <EntryTable entries={race.entries} predicts={race.predicts} />
+      <RecommendedBets entries={race.entries} predicts={race.predicts} />
       {race.results && race.results.length > 0 && (
         <div className="mt-6">
           <h2 className="text-2xl font-bold mb-4">レース結果</h2>
