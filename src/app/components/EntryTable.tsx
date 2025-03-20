@@ -1,6 +1,8 @@
+import React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
 import { Entry, Predict } from "@prisma/client"
 import { useMemo } from "react"
+import { groupBy } from "lodash"
 
 type EntryWithMasters = Entry & {
   HorseMaster: { name: string }
@@ -12,10 +14,7 @@ type Props = {
   predicts: Predict[]
 }
 
-const sortEntries = (a: EntryWithMasters, b: EntryWithMasters) => {
-  if (a.bracket_number !== b.bracket_number) {
-    return a.bracket_number - b.bracket_number
-  }
+const sortByHorseNumber = (a: EntryWithMasters, b: EntryWithMasters) => {
   return a.horse_number - b.horse_number
 }
 
@@ -31,7 +30,13 @@ export function EntryTable({ entries, predicts }: Props) {
     )
   }, [predicts])
 
-  const sortedEntries = [...entries].sort(sortEntries)
+  // 枠番でグループ化し、各グループ内で馬番順にソート
+  const groupedEntries = Object.entries(groupBy(entries, "bracket_number"))
+    .map(([bracketNumber, entriesInBracket]) => ({
+      bracketNumber: Number.parseInt(bracketNumber),
+      entries: [...entriesInBracket].sort(sortByHorseNumber),
+    }))
+    .sort((a, b) => a.bracketNumber - b.bracketNumber)
 
   return (
     <Table>
@@ -48,17 +53,25 @@ export function EntryTable({ entries, predicts }: Props) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {sortedEntries.map((entry) => (
-          <TableRow key={entry.id}>
-            <TableCell>{entry.bracket_number}</TableCell>
-            <TableCell>{entry.horse_number}</TableCell>
-            <TableCell>{entry.HorseMaster?.name ?? "不明"}</TableCell>
-            <TableCell>{entry.sex}</TableCell>
-            <TableCell>{entry.age}</TableCell>
-            <TableCell>{entry.JockeyMaster?.name ?? "不明"}</TableCell>
-            <TableCell>{entry.jockey_weight}</TableCell>
-            <TableCell>{predictMarks.get(entry.horse_number) ?? "×"}</TableCell>
-          </TableRow>
+        {groupedEntries.map(({ bracketNumber, entries }) => (
+          <React.Fragment key={bracketNumber}>
+            {entries.map((entry, index) => (
+              <TableRow key={entry.id}>
+                {index === 0 && (
+                  <TableCell rowSpan={entries.length} className="align-middle text-center">
+                    {bracketNumber}
+                  </TableCell>
+                )}
+                <TableCell>{entry.horse_number}</TableCell>
+                <TableCell>{entry.HorseMaster?.name ?? "不明"}</TableCell>
+                <TableCell>{entry.sex}</TableCell>
+                <TableCell>{entry.age}</TableCell>
+                <TableCell>{entry.JockeyMaster?.name ?? "不明"}</TableCell>
+                <TableCell>{entry.jockey_weight}</TableCell>
+                <TableCell>{predictMarks.get(entry.horse_number) ?? "×"}</TableCell>
+              </TableRow>
+            ))}
+          </React.Fragment>
         ))}
       </TableBody>
     </Table>
