@@ -48,7 +48,7 @@ export function EntryTable({ entries, predicts }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>枠番</TableHead>
+              <TableHead className="align-middle text-center">枠番</TableHead>
               <TableHead>馬番</TableHead>
               <TableHead>馬名</TableHead>
               <TableHead>性別</TableHead>

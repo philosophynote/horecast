@@ -17,7 +17,7 @@ export function PayoutTable({ payouts }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>配当結果</CardTitle>
+        <CardTitle>配当</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>

@@ -132,12 +132,12 @@ export function RecommendedBets({ entries, predicts, payouts = [] }: Props) {
             <h3 className="text-lg font-semibold mb-3 text-center">複勝</h3>
             <ul className="space-y-2">
               {tanaBets.map((bet, index) => (
-                <li key={index} className="border-b pb-1 last:border-b-0">
+                <li key={index} className="pb-1 last:border-b-0">
                   {bet.horse.horse_number}番 {bet.horse.horse_name} - {bet.amount}円
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-sm text-gray-600 text-right">
+            <p className="mt-2 text-sm text-gray-600 font-semibold text-right">
               合計: {tanaBets.reduce((sum, bet) => sum + bet.amount, 0)}円
             </p>
           </div>
@@ -172,7 +172,7 @@ export function RecommendedBets({ entries, predicts, payouts = [] }: Props) {
               <div className="space-y-4">
                 <ul className="space-y-2">
                   {hitDetails.map((hit, index) => (
-                    <li key={index} className="flex justify-between items-center border-b pb-1">
+                    <li key={index} className="flex justify-between items-center pb-1">
                       <span>
                         {hit.type} {hit.numbers}
                       </span>
