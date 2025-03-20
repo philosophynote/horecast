@@ -46,9 +46,8 @@ export default async function Home() {
                   <Image
                     src={backgroundImages[index % backgroundImages.length]}
                     alt="Race Track Background"
-                    layout="fill"
-                    objectFit="cover"
-                    className="absolute inset-0 opacity-50 filter grayscale"
+                    fill
+                    className="absolute inset-0 opacity-50 filter grayscale object-cover"
                   />
                   <CardHeader className="relative bg-white/70 backdrop-blur-sm p-2 rounded-lg h-full flex items-center justify-center">
                     <CardTitle className="text-4xl font-bold text-gray-800">{track}</CardTitle>
