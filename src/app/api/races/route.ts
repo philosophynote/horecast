@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   const now = new Date(Date.now());
-  const nextDay = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  // const nextDay = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
   const races = await prisma.race.findMany({
     // where: {
