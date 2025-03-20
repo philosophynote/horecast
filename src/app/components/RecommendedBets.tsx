@@ -66,7 +66,7 @@ export function RecommendedBets({ entries, predicts, payouts = [] }: Props) {
     hitFukusho.forEach((bet) => {
       const payout = fukushoPayouts.find((p) => p.numbers === String(bet.horse.horse_number))
       if (payout) {
-        let fukusyoHitAmount = Math.floor((bet.amount / 100) * payout.payout)
+        const fukusyoHitAmount = Math.floor((bet.amount / 100) * payout.payout)
         hitDetails.push({
           type: "複勝",
           numbers: bet.horse.horse_number,
