@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function GET() {
-  const targetDate = new Date('2025-03-16T15:00:00');
+  const targetDate = new Date('2025-03-16T00:00:00');
 
   const races = await prisma.race.findMany({
     where: {
