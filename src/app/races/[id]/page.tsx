@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
+import { Card, CardContent } from "@/app/components/ui/card"
 import { EntryTable } from "@/app/components/EntryTable"
 import { RaceResultTable } from "@/app/components/RaceResultTable"
 import { PayoutTable } from "@/app/components/PayoutTable"
