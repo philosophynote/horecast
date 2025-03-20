@@ -74,6 +74,7 @@ model Race {
   entries          Entry[]
   predicts         Predict[]
   results          Result[]
+  payouts          Payout[]
 }
 
 model Result {
@@ -89,4 +90,15 @@ model Result {
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   updated_at       DateTime  @default(now()) @db.Timestamptz(6)
   Race             Race      @relation(fields: [race_id], references: [id])
+}
+
+model Payout {
+  id          Int     @id @default(autoincrement())
+  race_id     Int
+  bet_type    String  // 馬券の種類 (単勝, 枠連, 馬連, 3連単 など)
+  numbers     String  // 的中馬券の組み合わせ (例: "6", "2-6", "2-4-6")
+  payout      Int     // 配当額 (単位: 円)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  Race        Race @relation(fields: [race_id], references: [id])
 }
