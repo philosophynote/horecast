@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
+import { Card } from "@/app/components/ui/card"
 import { Race } from "@prisma/client"
 import Link from "next/link"
 import { Badge } from "@/app/components/ui/badge"
