@@ -20,11 +20,11 @@ type RaceWithEntriesAndPredicts = Race & {
 function getGradientClass(courseType: string): string {
   switch (courseType) {
     case "芝":
-      return "bg-gradient-to-l from-[#8DB998] to-white"
+      return "bg-gradient-to-r from-[#8DB998] via-white to-[#8DB998]"
     case "ダート":
-      return "bg-gradient-to-l from-[#D6A67A] to-white"
+      return "bg-gradient-to-r from-[#D6A67A] via-white to-[#D6A67A]"
     case "障害":
-      return "bg-gradient-to-l from-[#7DBCCF] to-white"
+      return "bg-gradient-to-r from-[#7DBCCF] via-white to-[#7DBCCF]"
     default:
       return ""
   }
@@ -61,13 +61,12 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
   return (
     <main className="container mx-auto py-6" >
       <Card className={`mb-6 hover:shadow-lg transition-shadow duration-200 ${getGradientClass(race.course_type)}`}>
-        <CardContent className="flex p-8">
-          <div className="flex-1 flex items-center">
+        <CardContent className="flex flex-col p-8 space-y-4 items-center">
+          <div className="w-fit">
             <h1 className="text-5xl font-extrabold leading-tight tracking-wide">{race.track}{race.number}R {race.name}</h1>
           </div>
-          <div className="flex-1 space-y-4 border-l pl-8">
-            <p className="text-lg font-bold">開催時刻: <span className="font-medium">{formattedDate} {formattedTime}</span></p>
-            <p className="text-lg font-bold">{race.course_type}{race.distance}m</p>
+          <div className="w-fit pt-4 border-t">
+            <p className="text-lg font-bold">{formattedDate} {formattedTime} {race.course_type}{race.distance}m</p>
           </div>
         </CardContent>
       </Card>
