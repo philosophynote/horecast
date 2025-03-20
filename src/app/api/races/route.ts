@@ -4,16 +4,14 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function GET() {
-  // const now = new Date(Date.now());
-  // const nextDay = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const targetDate = new Date('2025-03-16T00:00:00+09:00');
 
   const races = await prisma.race.findMany({
-    // where: {
-    //   race_time: {
-    //     gte: now,
-    //     lt: nextDay,
-    //   },
-    // },
+    where: {
+      race_time: {
+        gte: targetDate,
+      },
+    },
     orderBy: { race_time: 'asc' },
   });
 
