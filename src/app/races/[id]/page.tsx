@@ -4,6 +4,7 @@ import { RaceResultTable } from "@/app/components/RaceResultTable"
 import { PayoutTable } from "@/app/components/PayoutTable"
 import { Race, Entry, Predict, Result, Payout } from "@prisma/client"
 import { NavigationButtons } from "@/app/components/NavigationButtons"
+import { RecommendedBets } from "@/app/components/RecommendedBets"
 
 type EntryWithMasters = Entry & {
   HorseMaster: { name: string }
@@ -57,6 +58,8 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
   const raceTime = race.race_time ? new Date(race.race_time) : null
   const formattedDate = raceTime ? raceTime.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }) : "N/A"
   const formattedTime = raceTime ? raceTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : "N/A"
+  // const now = new Date()
+  // const raceHasFinished = new Date(race.race_time) < now
 
   return (
     <main className="container mx-auto py-6" >
@@ -70,18 +73,16 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
           </div>
         </CardContent>
       </Card>
-      <h2 className="text-2xl font-bold mb-4">出馬表</h2>
       <EntryTable entries={race.entries} predicts={race.predicts} />
+      <RecommendedBets entries={race.entries} predicts={race.predicts}  payouts={race.payouts} />
       <div className="mt-6 flex gap-6">
         {race.results && race.results.length > 0 && (
           <div className="flex-1">
-            <h2 className="text-2xl font-bold mb-4">レース結果</h2>
             <RaceResultTable results={race.results} />
           </div>
         )}
         {race.payouts && race.payouts.length > 0 && (
           <div className="flex-1">
-            <h2 className="text-2xl font-bold mb-4">配当</h2>
             <PayoutTable payouts={race.payouts} />
           </div>
         )}

@@ -1,4 +1,5 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import type { Payout } from "@prisma/client"
 import { groupBy } from "lodash"
 
@@ -14,34 +15,39 @@ export function PayoutTable({ payouts }: Props) {
   const groupedPayouts = groupBy(payouts, "bet_type")
 
   return (
-    <div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>式別</TableHead>
-            <TableHead>馬番</TableHead>
-            <TableHead>配当金</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {Object.entries(groupedPayouts).map(([betType, payoutGroup]) => (
-            <TableRow key={betType}>
-              <TableCell>{betType}</TableCell>
-              <TableCell>
-                {payoutGroup.map((p) => (
-                  <div key={p.id}>{p.numbers}</div>
-                ))}
-              </TableCell>
-              <TableCell>
-                {payoutGroup.map((p) => (
-                  <div key={p.id}>{p.payout.toLocaleString()}円</div>
-                ))}
-              </TableCell>
+    <Card>
+      <CardHeader>
+        <CardTitle>配当</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>式別</TableHead>
+              <TableHead>馬番</TableHead>
+              <TableHead>配当金</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {Object.entries(groupedPayouts).map(([betType, payoutGroup]) => (
+              <TableRow key={betType}>
+                <TableCell>{betType}</TableCell>
+                <TableCell>
+                  {payoutGroup.map((p) => (
+                    <div key={p.id}>{p.numbers}</div>
+                  ))}
+                </TableCell>
+                <TableCell>
+                  {payoutGroup.map((p) => (
+                    <div key={p.id}>{p.payout.toLocaleString()}円</div>
+                  ))}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   )
 }
 
