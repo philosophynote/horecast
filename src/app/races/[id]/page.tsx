@@ -61,15 +61,14 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
   return (
     <main className="container mx-auto py-6" >
       <Card className={`mb-6 hover:shadow-lg transition-shadow duration-200 ${getGradientClass(race.course_type)}`}>
-        <CardHeader>
-          <CardTitle>{race.name}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p>開催日: {formattedDate}</p>
-          <p>発走時刻: {formattedTime}</p>
-          <p>レース番号: {race.number}</p>
-          <p>距離: {race.distance}m</p>
-          <p>トラック: {race.course_type}</p>
+        <CardContent className="flex p-8">
+          <div className="flex-1 flex items-center">
+            <h1 className="text-5xl font-extrabold leading-tight tracking-wide">{race.track}{race.number}R {race.name}</h1>
+          </div>
+          <div className="flex-1 space-y-4 border-l pl-8">
+            <p className="text-lg font-bold">開催時刻: <span className="font-medium">{formattedDate} {formattedTime}</span></p>
+            <p className="text-lg font-bold">{race.course_type}{race.distance}m</p>
+          </div>
         </CardContent>
       </Card>
       <h2 className="text-2xl font-bold mb-4">出馬表</h2>
