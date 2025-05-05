@@ -107,9 +107,10 @@ model Payout {
 model RecommendedBet {
   id            Int      @id @default(autoincrement())
   race_id       Int
-  bet_type      String  // 馬券の種類
-  numbers       String  // 組み合わせ (例: "1-2", "3")
-  payout        Int     @default(0) // 的中時の配当
+  bet_type      String   // 馬券の種類
+  numbers       String   // 組み合わせ (例: "1-2", "3")
+  bet           Int      @default(0) // 賭け金額
+  payout        Int      @default(0) // 的中時の配当
   created_at    DateTime @default(now()) @db.Timestamptz(6)
   updated_at    DateTime @updatedAt @db.Timestamptz(6)
 
