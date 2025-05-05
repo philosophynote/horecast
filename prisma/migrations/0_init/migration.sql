@@ -66,6 +66,50 @@ CREATE TABLE "Race" (
     CONSTRAINT "Race_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "Result" (
+    "id" SERIAL NOT NULL,
+    "race_id" INTEGER NOT NULL,
+    "rank" TEXT NOT NULL,
+    "frame_number" INTEGER NOT NULL,
+    "horse_number" INTEGER NOT NULL,
+    "horse_name" TEXT NOT NULL,
+    "sex_name" TEXT NOT NULL,
+    "favorite" INTEGER,
+    "odds" DOUBLE PRECISION,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Result_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Payout" (
+    "id" SERIAL NOT NULL,
+    "race_id" INTEGER NOT NULL,
+    "bet_type" TEXT NOT NULL,
+    "numbers" TEXT NOT NULL,
+    "payout" INTEGER NOT NULL,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Payout_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "RecommendedBet" (
+    "id" SERIAL NOT NULL,
+    "race_id" INTEGER NOT NULL,
+    "bet_type" TEXT NOT NULL,
+    "numbers" TEXT NOT NULL,
+    "payout" INTEGER NOT NULL DEFAULT 0,
+    "created_at" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ(6) NOT NULL,
+    "bet" INTEGER NOT NULL DEFAULT 100,
+
+    CONSTRAINT "RecommendedBet_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE INDEX "horse_id" ON "Entry"("horse_master_id");
 
@@ -96,4 +140,12 @@ ALTER TABLE "Entry" ADD CONSTRAINT "Entry_race_id_fkey" FOREIGN KEY ("race_id") 
 -- AddForeignKey
 ALTER TABLE "Predict" ADD CONSTRAINT "fk_netkeiba_race_id" FOREIGN KEY ("netkeiba_race_id") REFERENCES "Race"("netkeiba_race_id") ON DELETE CASCADE ON UPDATE NO ACTION;
 
+-- AddForeignKey
+ALTER TABLE "Result" ADD CONSTRAINT "Result_race_id_fkey" FOREIGN KEY ("race_id") REFERENCES "Race"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payout" ADD CONSTRAINT "Payout_race_id_fkey" FOREIGN KEY ("race_id") REFERENCES "Race"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RecommendedBet" ADD CONSTRAINT "RecommendedBet_race_id_fkey" FOREIGN KEY ("race_id") REFERENCES "Race"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
