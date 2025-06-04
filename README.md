@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Horecast
 
-## Getting Started
+Horecast は競馬のレース結果や AI 予想を表示する Next.js 製の Web アプリケーションです。レース情報は Supabase データベースから取得し、出馬表やレース結果、配当、AI が算出したおすすめ馬券などを閲覧できます。
 
-First, run the development server:
+## 起動方法
 
+1. 依存関係をインストールします。
+   ```bash
+   npm install
+   ```
+2. `.env` ファイルに以下の環境変数を設定します。（データベース接続情報など）
+   ```
+   DATABASE_URL=<Supabase の接続 URL>
+   DIRECT_URL=<Supabase の接続 URL（内部用）>
+   NEXT_PUBLIC_API_URL=http://localhost:3000
+   ```
+3. 開発サーバーを起動します。
+   ```bash
+   npm run dev
+   ```
+   ブラウザで [http://localhost:3000](http://localhost:3000) を開くとアプリケーションが表示されます。
+
+本番用ビルドを作成する場合は次を実行します。
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## プロジェクト構成
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- **src/app/** – Next.js のページや API ルート、UI コンポーネントを配置
+  - `api/` – Prisma を利用した API エンドポイント
+  - `components/` – 画面で使用する React コンポーネント群
+  - `races/` – `/races/[id]` ページなど、レース表示に関するルート
+- **src/lib/** – 共通で使うユーティリティ
+- **prisma/** – Prisma スキーマとマイグレーションファイル
+- **public/** – 画像やアイコンなど静的アセット
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ディレクトリ構造
 
-## Learn More
+```
+prisma/
+  migrations/
+  schema.prisma
+public/
+  favicon.ico
+  ...
+src/
+  app/
+    api/
+      races/
+        [id]/route.ts
+        route.ts
+    components/
+      EntryTable.tsx
+      Header.tsx
+      ...
+    races/
+      [id]/page.tsx
+    layout.tsx
+    page.tsx
+  lib/
+    utils.ts
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 使用技術
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Next.js 15** / **React 19** – アプリケーションフレームワーク
+- **TypeScript** – 型安全なフロントエンド開発
+ - **Prisma** – Supabase と接続する ORM
+- **Tailwind CSS** – UI スタイリング
+- **shadcn/ui** – 汎用 UI コンポーネント
+- **date-fns**, **lodash** などのユーティリティライブラリ
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
