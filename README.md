@@ -1,6 +1,6 @@
 # Horecast
 
-Horecast は競馬のレース結果や AI 予想を表示する Next.js 製の Web アプリケーションです。レース情報を PostgreSQL データベースから取得し、出馬表やレース結果、配当、AI が算出したおすすめ馬券などを閲覧できます。
+Horecast は競馬のレース結果や AI 予想を表示する Next.js 製の Web アプリケーションです。レース情報は Supabase データベースから取得し、出馬表やレース結果、配当、AI が算出したおすすめ馬券などを閲覧できます。
 
 ## 起動方法
 
@@ -10,8 +10,8 @@ Horecast は競馬のレース結果や AI 予想を表示する Next.js 製の 
    ```
 2. `.env` ファイルに以下の環境変数を設定します。（データベース接続情報など）
    ```
-   DATABASE_URL=<PostgreSQL の接続 URL>
-   DIRECT_URL=<PostgreSQL の接続 URL（内部用）>
+   DATABASE_URL=<Supabase の接続 URL>
+   DIRECT_URL=<Supabase の接続 URL（内部用）>
    NEXT_PUBLIC_API_URL=http://localhost:3000
    ```
 3. 開発サーバーを起動します。
@@ -67,7 +67,7 @@ src/
 
 - **Next.js 15** / **React 19** – アプリケーションフレームワーク
 - **TypeScript** – 型安全なフロントエンド開発
-- **Prisma** – PostgreSQL と接続する ORM
+ - **Prisma** – Supabase と接続する ORM
 - **Tailwind CSS** – UI スタイリング
 - **shadcn/ui** – 汎用 UI コンポーネント
 - **date-fns**, **lodash** などのユーティリティライブラリ
