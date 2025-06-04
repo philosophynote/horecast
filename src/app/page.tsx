@@ -52,6 +52,14 @@ export default function Home() {
 
   return (
     <main className="container mx-auto py-6 px-4">
+      {/* モバイル用日付セレクター（上部に配置） */}
+      <div className="lg:hidden mb-6">
+        <DateSelector 
+          selectedDate={selectedDate} 
+          onDateChange={handleDateChange} 
+        />
+      </div>
+
       <div className="flex gap-6">
         {/* メインコンテンツ */}
         <div className="flex-1">
@@ -100,8 +108,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* 右側の日付セレクター */}
-        <div className="w-64 flex-shrink-0">
+        {/* デスクトップ用右側の日付セレクター */}
+        <div className="hidden lg:block w-64 flex-shrink-0">
           <div className="sticky top-6">
             <DateSelector 
               selectedDate={selectedDate} 
