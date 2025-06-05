@@ -34,13 +34,15 @@ export function DateSelector({ selectedDate, onDateChange }: DateSelectorProps) 
   }, [])
 
   const formatDateLabel = (dateStr: string) => {
+    if (!dateStr) return ''
     const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return ''
     const today = new Date()
     const isToday = format(today, 'yyyy-MM-dd') === dateStr
-    
+
     let label = format(date, 'M月d日')
     if (isToday) label += ' (今日)'
-    
+
     return label
   }
 
@@ -104,7 +106,7 @@ export function DateSelector({ selectedDate, onDateChange }: DateSelectorProps) 
         >
           <span>日付選択</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm">{formatDateLabel(selectedDate)}</span>
+            <span className="text-sm">{selectedDate ? formatDateLabel(selectedDate) : ''}</span>
             <svg
               className={`w-4 h-4 transform transition-transform ${isOpen ? 'rotate-180' : ''}`}
               fill="none"

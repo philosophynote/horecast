@@ -11,8 +11,38 @@ import { format } from "date-fns"
 
 export default function Home() {
   const [races, setRaces] = useState<Race[]>([])
-  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'))
+  const [selectedDate, setSelectedDate] = useState<string>("")
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const res = await fetch('/api/races/dates')
+        if (res.ok) {
+          const dates: string[] = await res.json()
+          if (dates.length > 0) {
+            const today = new Date()
+            let closest = dates[0]
+            let minDiff = Math.abs(new Date(dates[0]).getTime() - today.getTime())
+            for (const dateStr of dates) {
+              const diff = Math.abs(new Date(dateStr).getTime() - today.getTime())
+              if (diff < minDiff) {
+                minDiff = diff
+                closest = dateStr
+              }
+            }
+            setSelectedDate(closest)
+          } else {
+            setSelectedDate(format(new Date(), 'yyyy-MM-dd'))
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing date:', error)
+        setSelectedDate(format(new Date(), 'yyyy-MM-dd'))
+      }
+    }
+    init()
+  }, [])
 
   const fetchRaces = async (date: string) => {
     setLoading(true)
@@ -32,7 +62,9 @@ export default function Home() {
   }
 
   useEffect(() => {
-    fetchRaces(selectedDate)
+    if (selectedDate) {
+      fetchRaces(selectedDate)
+    }
   }, [selectedDate])
 
   const backgroundImages = [
