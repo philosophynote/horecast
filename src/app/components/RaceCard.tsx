@@ -2,6 +2,7 @@ import { Card } from "@/app/components/ui/card"
 import { Race } from "@prisma/client"
 import Link from "next/link"
 import { Badge } from "@/app/components/ui/badge"
+import { formatInTimeZone } from "date-fns-tz"
 
 function getGradientClass(courseType: string): string {
   switch (courseType) {
@@ -18,7 +19,9 @@ function getGradientClass(courseType: string): string {
 
 export function RaceCard({ race }: { race: Race }) {
   const raceTime = race.race_time ? new Date(race.race_time) : null
-  const formattedTime = raceTime ? raceTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : "N/A"
+  const formattedTime = raceTime
+    ? formatInTimeZone(raceTime, 'UTC', 'HH:mm')
+    : "N/A"
 
   return (
     <Link href={`/races/${race.id}`} className="block mb-4">
