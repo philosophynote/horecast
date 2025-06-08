@@ -8,6 +8,7 @@ import { Race } from "@prisma/client"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
+import { formatInTimeZone } from "date-fns-tz"
 
 export default function Home() {
   const [races, setRaces] = useState<Race[]>([])
@@ -78,8 +79,10 @@ export default function Home() {
   }
 
   const groupedRaces = groupBy(races, (race) => {
-    const date = race.race_time ? new Date(race.race_time) : new Date()
-    return date.toISOString().split('T')[0]
+    if (race.race_time) {
+      return formatInTimeZone(new Date(race.race_time), 'UTC', 'yyyy-MM-dd')
+    }
+    return formatInTimeZone(new Date(), 'UTC', 'yyyy-MM-dd')
   })
 
   return (
