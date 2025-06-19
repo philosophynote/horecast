@@ -8,11 +8,42 @@ import { Race } from "@prisma/client"
 import Image from "next/image"
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
+import { formatInTimeZone } from "date-fns-tz"
 
 export default function Home() {
   const [races, setRaces] = useState<Race[]>([])
-  const [selectedDate, setSelectedDate] = useState(() => format(new Date(), 'yyyy-MM-dd'))
+  const [selectedDate, setSelectedDate] = useState<string>("")
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const res = await fetch('/api/races/dates')
+        if (res.ok) {
+          const dates: string[] = await res.json()
+          if (dates.length > 0) {
+            const today = new Date()
+            let closest = dates[0]
+            let minDiff = Math.abs(new Date(dates[0]).getTime() - today.getTime())
+            for (const dateStr of dates) {
+              const diff = Math.abs(new Date(dateStr).getTime() - today.getTime())
+              if (diff < minDiff) {
+                minDiff = diff
+                closest = dateStr
+              }
+            }
+            setSelectedDate(closest)
+          } else {
+            setSelectedDate(format(new Date(), 'yyyy-MM-dd'))
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing date:', error)
+        setSelectedDate(format(new Date(), 'yyyy-MM-dd'))
+      }
+    }
+    init()
+  }, [])
 
   const fetchRaces = async (date: string) => {
     setLoading(true)
@@ -32,7 +63,9 @@ export default function Home() {
   }
 
   useEffect(() => {
-    fetchRaces(selectedDate)
+    if (selectedDate) {
+      fetchRaces(selectedDate)
+    }
   }, [selectedDate])
 
   const backgroundImages = [
@@ -46,12 +79,22 @@ export default function Home() {
   }
 
   const groupedRaces = groupBy(races, (race) => {
-    const date = race.race_time ? new Date(race.race_time) : new Date()
-    return date.toISOString().split('T')[0]
+    if (race.race_time) {
+      return formatInTimeZone(new Date(race.race_time), 'UTC', 'yyyy-MM-dd')
+    }
+    return formatInTimeZone(new Date(), 'UTC', 'yyyy-MM-dd')
   })
 
   return (
     <main className="container mx-auto py-6 px-4">
+      {/* モバイル用日付セレクター（上部に配置） */}
+      <div className="lg:hidden mb-6">
+        <DateSelector 
+          selectedDate={selectedDate} 
+          onDateChange={handleDateChange} 
+        />
+      </div>
+
       <div className="flex gap-6">
         {/* メインコンテンツ */}
         <div className="flex-1">
@@ -100,8 +143,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* 右側の日付セレクター */}
-        <div className="w-64 flex-shrink-0">
+        {/* デスクトップ用右側の日付セレクター */}
+        <div className="hidden lg:block w-64 flex-shrink-0">
           <div className="sticky top-6">
             <DateSelector 
               selectedDate={selectedDate} 

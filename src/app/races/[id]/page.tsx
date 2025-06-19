@@ -5,6 +5,7 @@ import { PayoutTable } from "@/app/components/PayoutTable"
 import { Race, Entry, Predict, Result, Payout } from "@prisma/client"
 import { NavigationButtons } from "@/app/components/NavigationButtons"
 import { RecommendedBets } from "@/app/components/RecommendedBets"
+import { formatInTimeZone } from "date-fns-tz"
 
 type EntryWithMasters = Entry & {
   HorseMaster: { name: string }
@@ -56,8 +57,12 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
     return <div>レースが見つかりません</div>
   }
   const raceTime = race.race_time ? new Date(race.race_time) : null
-  const formattedDate = raceTime ? raceTime.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }) : "N/A"
-  const formattedTime = raceTime ? raceTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : "N/A"
+  const formattedDate = raceTime
+    ? formatInTimeZone(raceTime, 'UTC', 'yyyy年M月d日')
+    : "N/A"
+  const formattedTime = raceTime
+    ? formatInTimeZone(raceTime, 'UTC', 'HH:mm')
+    : "N/A"
   // const now = new Date()
   // const raceHasFinished = new Date(race.race_time) < now
 
