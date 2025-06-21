@@ -21,6 +21,7 @@ export async function GET(
       predicts: true,
       results: true,
       payouts: true,
+      recommended_bets: true,
     },
   });
 
