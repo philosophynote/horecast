@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/app/components/ui/card"
 import { EntryTable } from "@/app/components/EntryTable"
 import { RaceResultTable } from "@/app/components/RaceResultTable"
 import { PayoutTable } from "@/app/components/PayoutTable"
-import { Race, Entry, Predict, Result, Payout } from "@prisma/client"
+import { Race, Entry, Predict, Result, Payout, RecommendedBet } from "@prisma/client"
 import { NavigationButtons } from "@/app/components/NavigationButtons"
 import { RecommendedBets } from "@/app/components/RecommendedBets"
 import { formatInTimeZone } from "date-fns-tz"
@@ -17,6 +17,7 @@ type RaceWithEntriesAndPredicts = Race & {
   predicts: Predict[]
   results: Result[]
   payouts: Payout[]
+  recommended_bets: RecommendedBet[]
 }
 
 function getGradientClass(courseType: string): string {
@@ -79,7 +80,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
         </CardContent>
       </Card>
       <EntryTable entries={race.entries} predicts={race.predicts} />
-      <RecommendedBets entries={race.entries} predicts={race.predicts}  payouts={race.payouts} />
+      <RecommendedBets bets={race.recommended_bets} />
       <div className="mt-6 flex gap-6">
         {race.results && race.results.length > 0 && (
           <div className="flex-1">
