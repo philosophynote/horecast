@@ -57,6 +57,10 @@ export function RecommendedBets({ bets }: Props) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.entries(grouped).map(([betType, betGroup]) => {
             const total = betGroup.reduce((sum, b) => sum + b.bet, 0)
+            const sorted =
+              betType === "複勝"
+                ? [...betGroup].sort((a, b) => b.bet - a.bet)
+                : betGroup
             if (betType === "ワイド" || betType === "三連複" || betType === "3連複") {
               const nums = uniqueNumbers(betGroup)
               return (
@@ -74,7 +78,7 @@ export function RecommendedBets({ bets }: Props) {
               <div key={betType} className="bg-gray-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
                 <ul className="space-y-2">
-                  {betGroup.map((bet) => (
+                  {sorted.map((bet) => (
                     <li key={bet.id} className="pb-1 last:border-b-0">
                       {bet.numbers} - {bet.bet}円
                     </li>
