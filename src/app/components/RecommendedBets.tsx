@@ -101,8 +101,8 @@ export function RecommendedBets({ bets }: Props) {
             <h3 className="text-lg font-semibold mb-3 text-center">的中結果</h3>
             <div className="space-y-4">
               <ul className="space-y-2">
-                {hitDetails.map((hit, index) => (
-                  <li key={index} className="flex justify-between items-center pb-1">
+                {hitDetails.map((hit) => (
+                  <li key={`${hit.type}-${hit.numbers}`} className="flex justify-between items-center pb-1">
                     <span>
                       {hit.type} {hit.numbers}
                     </span>
