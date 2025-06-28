@@ -3,6 +3,7 @@
 import { Card, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { RaceCard } from "./components/RaceCard"
 import { DateSelector } from "./components/DateSelector"
+import { StatisticsView } from "./components/StatisticsView"
 import { groupBy } from "lodash"
 import { Race } from "@prisma/client"
 import Image from "next/image"
@@ -14,6 +15,7 @@ export default function Home() {
   const [races, setRaces] = useState<Race[]>([])
   const [selectedDate, setSelectedDate] = useState<string>("")
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<'races' | 'statistics'>('races')
 
   useEffect(() => {
     const init = async () => {
@@ -87,15 +89,47 @@ export default function Home() {
 
   return (
     <main className="container mx-auto py-6 px-4">
-      {/* モバイル用日付セレクター（上部に配置） */}
-      <div className="lg:hidden mb-6">
-        <DateSelector 
-          selectedDate={selectedDate} 
-          onDateChange={handleDateChange} 
-        />
+      {/* タブナビゲーション */}
+      <div className="mb-6">
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('races')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'races'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              レース一覧
+            </button>
+            <button
+              onClick={() => setActiveTab('statistics')}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'statistics'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              統計情報
+            </button>
+          </nav>
+        </div>
       </div>
 
-      <div className="flex gap-6">
+      {activeTab === 'statistics' ? (
+        <StatisticsView />
+      ) : (
+        <>
+          {/* モバイル用日付セレクター（上部に配置） */}
+          <div className="lg:hidden mb-6">
+            <DateSelector 
+              selectedDate={selectedDate} 
+              onDateChange={handleDateChange} 
+            />
+          </div>
+
+          <div className="flex gap-6">
         {/* メインコンテンツ */}
         <div className="flex-1">
           {loading ? (
@@ -141,18 +175,20 @@ export default function Home() {
                 </div>
               ))
           )}
-        </div>
+          </div>
 
-        {/* デスクトップ用右側の日付セレクター */}
-        <div className="hidden lg:block w-64 flex-shrink-0">
-          <div className="sticky top-6">
-            <DateSelector 
-              selectedDate={selectedDate} 
-              onDateChange={handleDateChange} 
-            />
+          {/* デスクトップ用右側の日付セレクター */}
+          <div className="hidden lg:block w-64 flex-shrink-0">
+            <div className="sticky top-6">
+              <DateSelector 
+                selectedDate={selectedDate} 
+                onDateChange={handleDateChange} 
+              />
+            </div>
           </div>
         </div>
-      </div>
+        </>
+      )}
     </main>
   )
 }
