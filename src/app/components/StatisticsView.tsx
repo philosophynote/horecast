@@ -130,7 +130,7 @@ export function StatisticsView() {
           <CardContent>
             <div className="text-2xl font-bold">{formatPercentage(overallStatistics.hitRate)}</div>
             <p className="text-xs text-muted-foreground">
-              {overallStatistics.totalBets - Math.round(overallStatistics.totalBets * overallStatistics.hitRate / 100)} / {overallStatistics.totalBets}
+              {Math.round(overallStatistics.totalBets * overallStatistics.hitRate / 100)} / {overallStatistics.totalBets}
             </p>
           </CardContent>
         </Card>
