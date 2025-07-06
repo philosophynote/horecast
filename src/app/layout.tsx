@@ -17,6 +17,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Horecast - AI競馬予想",
   description: "AI競馬予想アプリケーション",
+  openGraph: {
+    title: "Horecast - AI競馬予想",
+    description: "AI競馬予想アプリケーション",
+    images: [
+      {
+        url: "/running_horse.png",
+        width: 1200,
+        height: 630,
+        alt: "Horecast - AI競馬予想",
+      },
+    ],
+  },
 };
 
 export default function RootLayout({
