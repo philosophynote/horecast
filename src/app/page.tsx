@@ -76,6 +76,22 @@ export default function Home() {
     '/horse-track-bg.png'
   ]
 
+  function getTrackAccentClass(trackName: string): string {
+    const trackColors: Record<string, string> = {
+      '東京': 'border-t-4 border-t-red-300',
+      '中山': 'border-t-4 border-t-blue-300',
+      '阪神': 'border-t-4 border-t-purple-300',
+      '京都': 'border-t-4 border-t-pink-300',
+      '中京': 'border-t-4 border-t-yellow-300',
+      '新潟': 'border-t-4 border-t-green-300',
+      '小倉': 'border-t-4 border-t-orange-300',
+      '函館': 'border-t-4 border-t-cyan-300',
+      '札幌': 'border-t-4 border-t-indigo-300',
+      '福島': 'border-t-4 border-t-teal-300'
+    }
+    return trackColors[trackName] || 'border-t-4 border-t-gray-300'
+  }
+
   const handleDateChange = (date: string) => {
     setSelectedDate(date)
   }
@@ -88,7 +104,7 @@ export default function Home() {
   })
 
   return (
-    <main className="container mx-auto py-6 px-4">
+    <main className="container mx-auto py-6 px-4 min-h-screen bg-gray-50">
       {/* タブナビゲーション */}
       <div className="mb-6">
         <div className="border-b border-gray-200">
@@ -155,7 +171,7 @@ export default function Home() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {Object.entries(groupBy(raceList, "track")).map(([track, trackRaces], index) => (
                       <div key={track} className="flex flex-col">
-                        <Card className="relative mb-4 rounded-xl overflow-hidden min-h-[120px]">
+                        <Card className={`relative mb-4 rounded-xl overflow-hidden min-h-[120px] ${getTrackAccentClass(track)}`}>
                           <Image
                             src={backgroundImages[index % backgroundImages.length]}
                             alt="Race Track Background"
