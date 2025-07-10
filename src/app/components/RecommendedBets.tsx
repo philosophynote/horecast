@@ -2,6 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/ca
 import type { RecommendedBet } from "@prisma/client"
 import { groupBy } from "lodash"
 
+type EntryWithHorse = {
+  horse_number: number
+  HorseMaster: {
+    name: string
+  } | null
+}
+
 function uniqueNumbers(bets: RecommendedBet[]): string {
   const nums = new Set<number>()
   bets.forEach((b) => {
@@ -19,12 +26,21 @@ function uniqueNumbers(bets: RecommendedBet[]): string {
 
 interface Props {
   bets: RecommendedBet[]
+  entries: EntryWithHorse[]
 }
 
-export function RecommendedBets({ bets }: Props) {
+export function RecommendedBets({ bets, entries }: Props) {
+  // 馬番から馬名へのマッピングを作成
+  const horseNameMap = new Map(
+    entries.map(entry => [
+      entry.horse_number,
+      entry.HorseMaster?.name ?? "不明"
+    ])
+  )
+
   if (bets.length === 0) {
     return (
-      <Card className="mt-8">
+      <Card className="mt-8 bg-white border border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle>レコメンド馬券</CardTitle>
         </CardHeader>
@@ -49,24 +65,24 @@ export function RecommendedBets({ bets }: Props) {
   const balance = hitAmount - totalAmount
 
   return (
-    <Card className="mt-8">
+    <Card className="mt-8 bg-white border border-gray-200 shadow-sm">
       <CardHeader>
         <CardTitle>レコメンド馬券</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
           {Object.entries(grouped).map(([betType, betGroup]) => {
             const total = betGroup.reduce((sum, b) => sum + b.bet, 0)
             const sorted =
               betType === "複勝"
                 ? [...betGroup].sort((a, b) => b.bet - a.bet)
                 : betGroup
-            if (betType === "ワイド" || betType === "三連複" || betType === "3連複") {
+            if (betType === "ワイド") {
               const nums = uniqueNumbers(betGroup)
               return (
-                <div key={betType} className="bg-gray-50 p-4 rounded-lg">
+                <div key={betType} className="bg-gray-100 p-4 rounded-lg min-h-[180px] flex flex-col border border-gray-200">
                   <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
-                  <div className="flex flex-col items-center justify-center h-full">
+                  <div className="flex flex-col items-center justify-center flex-1">
                     <p className="text-center mb-3">ボックス: {nums}</p>
                     <p className="text-sm text-gray-600">各{betGroup[0].bet}円 × {betGroup.length}通り</p>
                     <p className="mt-2 text-sm text-gray-600 font-semibold">合計: {total}円</p>
@@ -75,14 +91,25 @@ export function RecommendedBets({ bets }: Props) {
               )
             }
             return (
-              <div key={betType} className="bg-gray-50 p-4 rounded-lg">
+              <div key={betType} className="bg-gray-100 p-4 rounded-lg min-h-[180px] flex flex-col border border-gray-200">
                 <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
-                <ul className="space-y-2">
-                  {sorted.map((bet) => (
-                    <li key={bet.id} className="pb-1 last:border-b-0">
-                      {bet.numbers} - {bet.bet}円
-                    </li>
-                  ))}
+                <ul className="space-y-2 flex-1">
+                  {sorted.map((bet) => {
+                    if (betType === "複勝") {
+                      const horseNumber = parseInt(bet.numbers, 10)
+                      const horseName = horseNameMap.get(horseNumber) || "不明"
+                      return (
+                        <li key={bet.id} className="pb-1 last:border-b-0">
+                          {bet.numbers} {horseName} - {bet.bet}円
+                        </li>
+                      )
+                    }
+                    return (
+                      <li key={bet.id} className="pb-1 last:border-b-0">
+                        {bet.numbers} - {bet.bet}円
+                      </li>
+                    )
+                  })}
                 </ul>
                 <p className="mt-2 text-sm text-gray-600 font-semibold text-right">
                   合計: {total}円
