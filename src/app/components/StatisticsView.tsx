@@ -215,7 +215,6 @@ export function StatisticsView() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2">日時</th>
                   <th className="text-left p-2">競馬場</th>
                   <th className="text-left p-2">レース名</th>
                   <th className="text-right p-2">ベット数</th>
@@ -227,9 +226,6 @@ export function StatisticsView() {
               <tbody>
                 {data.raceStatistics.slice(0, 10).map((race) => (
                   <tr key={race.raceId} className="border-b">
-                    <td className="p-2">
-                      {race.raceTime ? format(new Date(race.raceTime), 'MM/dd HH:mm') : '-'}
-                    </td>
                     <td className="p-2">{race.track}</td>
                     <td className="p-2">{race.raceName}</td>
                     <td className="text-right p-2">{race.statistics.totalBets}</td>
