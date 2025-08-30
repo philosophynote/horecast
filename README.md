@@ -1,6 +1,6 @@
 # Horecast
 
-Horecast は競馬のレース結果や AI 予想を表示する Next.js 製の Web アプリケーションです。レース情報は Supabase データベースから取得し、出馬表やレース結果、配当、AI が算出したおすすめ馬券などを閲覧できます。
+Horecast は競馬のレース結果や AI 予想を表示する Next.js 製の Web アプリケーションです。レース情報は Supabase データベースから取得し、出馬表やレース結果、配当、AI が算出したおすすめ馬券などを閲覧できます。Google アカウントによるログインにも対応しています。
 
 ## 起動方法
 
@@ -9,11 +9,14 @@ Horecast は競馬のレース結果や AI 予想を表示する Next.js 製の 
    npm install
    ```
 2. `.env` ファイルに以下の環境変数を設定します。（データベース接続情報など）
-   ```
-   DATABASE_URL=<Supabase の接続 URL>
-   DIRECT_URL=<Supabase の接続 URL（内部用）>
-   NEXT_PUBLIC_API_URL=http://localhost:3000
-   ```
+    ```
+    DATABASE_URL=<Supabase の接続 URL>
+    DIRECT_URL=<Supabase の接続 URL（内部用）>
+    NEXT_PUBLIC_API_URL=http://localhost:3000
+    GOOGLE_CLIENT_ID=<Google Cloud Console のクライアント ID>
+    GOOGLE_CLIENT_SECRET=<Google Cloud Console のクライアント シークレット>
+    NEXTAUTH_SECRET=<任意の長いランダムな文字列>
+    ```
 3. 開発サーバーを起動します。
    ```bash
    npm run dev

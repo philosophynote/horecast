@@ -10,8 +10,10 @@ import Image from "next/image"
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { formatInTimeZone } from "date-fns-tz"
+import { useSession, signIn } from "next-auth/react"
 
 export default function Home() {
+  const { data: session, status } = useSession()
   const [races, setRaces] = useState<Race[]>([])
   const [selectedDate, setSelectedDate] = useState<string>("")
   const [loading, setLoading] = useState(true)
@@ -102,6 +104,37 @@ export default function Home() {
     }
     return formatInTimeZone(new Date(), 'UTC', 'yyyy-MM-dd')
   })
+
+  if (status === "loading") {
+    return (
+      <main className="container mx-auto py-6 px-4 min-h-screen bg-gray-50">
+        <div className="text-center py-8">
+          <p className="text-lg">読み込み中...</p>
+        </div>
+      </main>
+    )
+  }
+
+  if (!session) {
+    return (
+      <main className="container mx-auto py-6 px-4 min-h-screen bg-gray-50">
+        <div className="text-center py-20">
+          <div className="max-w-md mx-auto">
+            <h1 className="text-4xl font-bold text-gray-900 mb-6">Horecast</h1>
+            <p className="text-xl text-gray-600 mb-8">
+              AI競馬予想をご利用いただくには、ログインが必要です
+            </p>
+            <button
+              onClick={() => signIn('google')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-colors duration-200"
+            >
+              Googleでログイン
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="container mx-auto py-6 px-4 min-h-screen bg-gray-50">

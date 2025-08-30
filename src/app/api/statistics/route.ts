@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { matchBetsWithPayouts, calculateStatistics, aggregateStatistics } from '@/app/lib/statistics'
 
-const prisma = new PrismaClient()
+// use shared prisma client
 
 export async function GET(request: NextRequest) {
   try {

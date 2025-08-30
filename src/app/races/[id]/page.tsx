@@ -1,3 +1,5 @@
+'use client'
+
 import { Card, CardContent } from "@/app/components/ui/card"
 import { EntryTable } from "@/app/components/EntryTable"
 import { RaceResultTable } from "@/app/components/RaceResultTable"
@@ -6,6 +8,8 @@ import { Race, Entry, Predict, Result, Payout, RecommendedBet } from "@prisma/cl
 import { NavigationButtons } from "@/app/components/NavigationButtons"
 import { RecommendedBets } from "@/app/components/RecommendedBets"
 import { formatInTimeZone } from "date-fns-tz"
+import { useSession, signIn } from "next-auth/react"
+import { useState, useEffect } from "react"
 
 function getCombinedAccentClass(courseType: string, track: string): string {
   const courseAccent = getCourseAccentClass(courseType)
@@ -56,26 +60,77 @@ type RaceWithEntriesAndPredicts = Race & {
 }
 
 
-async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredicts> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/races/${id}`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch race');
+export default function RacePage({ params }: { params: Promise<{ id: number }> }) {
+  const { data: session, status } = useSession()
+  const [race, setRace] = useState<RaceWithEntriesAndPredicts | null>(null)
+  const [navigation, setNavigation] = useState<{ prevRaceId?: number; nextRaceId?: number }>({})
+  const [loading, setLoading] = useState(true)
+  const [raceId, setRaceId] = useState<number | null>(null)
+
+  useEffect(() => {
+    params.then(({ id }) => setRaceId(id))
+  }, [params])
+
+  useEffect(() => {
+    if (!raceId || !session) return
+
+    const fetchData = async () => {
+      try {
+        const [raceRes, navRes] = await Promise.all([
+          fetch(`/api/races/${raceId}`, { cache: 'no-store' }),
+          fetch(`/api/races/${raceId}/navigation`, { cache: 'no-store' })
+        ])
+
+        if (!raceRes.ok) throw new Error('Failed to fetch race')
+        if (!navRes.ok) throw new Error('Failed to fetch navigation')
+
+        const [raceData, navData] = await Promise.all([
+          raceRes.json(),
+          navRes.json()
+        ])
+
+        setRace(raceData)
+        setNavigation(navData)
+      } catch (error) {
+        console.error('Error fetching race data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [raceId, session])
+
+  if (status === "loading" || loading) {
+    return (
+      <main className="container mx-auto py-6 min-h-screen bg-gray-50">
+        <div className="text-center py-8">
+          <p className="text-lg">読み込み中...</p>
+        </div>
+      </main>
+    )
   }
-  return res.json();
-}
 
-async function getNavigation(id: number): Promise<{ prevRaceId?: number; nextRaceId?: number }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/races/${id}/navigation`, { cache: "no-store" })
-  if (!res.ok) {
-    throw new Error("Failed to fetch navigation")
+  if (!session) {
+    return (
+      <main className="container mx-auto py-6 min-h-screen bg-gray-50">
+        <div className="text-center py-20">
+          <div className="max-w-md mx-auto">
+            <h1 className="text-4xl font-bold text-gray-900 mb-6">アクセス制限</h1>
+            <p className="text-xl text-gray-600 mb-8">
+              レース詳細をご覧いただくには、ログインが必要です
+            </p>
+            <button
+              onClick={() => signIn('google')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-md transition-colors duration-200"
+            >
+              Googleでログイン
+            </button>
+          </div>
+        </div>
+      </main>
+    )
   }
-  return res.json()
-}
-
-export default async function RacePage({ params }: { params: Promise<{ id: number }> }) {
-  const { id } = await params;
-  const [race, navigation] = await Promise.all([getRaceWithEntries(id), getNavigation(id)])
-
 
   if (!race) {
     return <div>レースが見つかりません</div>
