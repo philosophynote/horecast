@@ -8,6 +8,8 @@ Horecast は競馬のレース結果や AI 予想を表示する Next.js 製の 
    ```bash
    npm install
    ```
+   - 社内プロキシ経由でのみ外部通信が許可されている環境では、`HTTP_PROXY` / `HTTPS_PROXY` などのプロキシ設定を事前に行ってください。 
+   - それでも 403 エラーで取得できない場合は、利用可能なプロキシ経由で `registry.npmjs.org` へのアクセス権があることを確認し、`npm cache clean --force` を実行したうえで再試行してください。
 2. `.env` ファイルに以下の環境変数を設定します。（データベース接続情報など）
    ```
    DATABASE_URL=<Supabase の接続 URL>
