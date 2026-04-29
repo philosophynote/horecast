@@ -230,7 +230,7 @@ function formatPredict(predict: LlmPredict): string {
 
 ### ブランチ戦略
 
-```
+```text
 main          ← 本番環境（Vercel等にデプロイ）
   └─ feature/llm-predict-section    ← 新機能開発
   └─ fix/llm-predict-display-bug    ← バグ修正
@@ -246,7 +246,7 @@ main          ← 本番環境（Vercel等にデプロイ）
 ### コミットメッセージ規約
 
 **Conventional Commits に準拠**:
-```
+```text
 <type>(<scope>): <subject>
 ```
 
@@ -266,7 +266,7 @@ main          ← 本番環境（Vercel等にデプロイ）
 - `docs`: ドキュメント
 
 **例**:
-```
+```text
 feat(prisma): LlmPredictモデルをスキーマに追加
 
 - race_idとproviderの複合ユニーク制約を設定

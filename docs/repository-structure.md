@@ -7,7 +7,7 @@
 
 ## プロジェクト全体構造
 
-```
+```text
 horecast/
 ├── src/
 │   ├── app/                        # Next.js App Router
@@ -100,7 +100,7 @@ horecast/
 - 依存禁止: Reactコンポーネント、`src/app/components/`
 
 **新規追加ファイル**:
-```
+```text
 src/app/api/races/[id]/llm-predict/
 └── route.ts   # LLM予想取得APIエンドポイント
 ```
@@ -129,7 +129,7 @@ src/app/api/races/[id]/llm-predict/
 - 依存禁止: Prisma Client（APIを経由すること）
 
 **新規追加ファイル**:
-```
+```text
 src/app/components/
 ├── LlmPredictSection.tsx   # LLM予想カードコンポーネント (Client Component)
 └── ui/
@@ -246,7 +246,7 @@ export interface LlmPredictResponse {
 
 ### レイヤー間の依存（許可される方向）
 
-```
+```text
 ページ (page.tsx)
   ↓ コンポーネントをimport
 コンポーネント (components/*.tsx)
@@ -279,7 +279,7 @@ Supabase PostgreSQL
 
 テーブルやAPIの変更は不要。データ投入のみで対応できる:
 
-```
+```text
 1. ユーザー（オーナー）が新プロバイダーの予想をllm_predictsにINSERT
    （provider: "gemini" など）
 2. LlmPredictSection が自動的に新プロバイダーのカードを表示
@@ -288,7 +288,7 @@ Supabase PostgreSQL
 
 ### 新しいAPIエンドポイント追加時
 
-```
+```text
 src/app/api/races/[id]/
 ├── route.ts              # 既存
 ├── navigation/route.ts   # 既存
@@ -301,7 +301,7 @@ src/app/api/races/[id]/
 
 ### .gitignore（追加すべき項目）
 
-```
+```gitignore
 # 環境変数
 .env
 .env.local
@@ -325,4 +325,4 @@ node_modules/
 *.pickle
 ```
 
-> **注意**: 現在のリポジトリに `00660.pickle`, `01018.pickle` などの未追跡ファイルが存在します。不要であれば `.gitignore` に追加するか削除してください。
+> **注意**: 一時ファイルやローカル生成物（例: `*.pickle`）は、必要に応じて `.gitignore` に追加するか削除してください。

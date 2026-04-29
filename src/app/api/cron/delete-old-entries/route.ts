@@ -4,9 +4,23 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 function getOneMonthAgo(now: Date): Date {
-  const oneMonthAgo = new Date(now);
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  return oneMonthAgo;
+  const targetMonthIndex = now.getMonth() - 1;
+  const lastDayOfTargetMonth = new Date(
+    now.getFullYear(),
+    targetMonthIndex + 1,
+    0
+  ).getDate();
+  const targetDay = Math.min(now.getDate(), lastDayOfTargetMonth);
+
+  return new Date(
+    now.getFullYear(),
+    targetMonthIndex,
+    targetDay,
+    now.getHours(),
+    now.getMinutes(),
+    now.getSeconds(),
+    now.getMilliseconds()
+  );
 }
 
 function isAuthorized(request: Request): boolean {
@@ -23,16 +37,23 @@ export async function POST(request: Request) {
 
   const deletionCutoff = getOneMonthAgo(new Date());
 
-  const result = await prisma.entry.deleteMany({
-    where: {
-      created_at: {
-        lt: deletionCutoff,
+  try {
+    const result = await prisma.entry.deleteMany({
+      where: {
+        created_at: {
+          lt: deletionCutoff,
+        },
       },
-    },
-  });
+    });
 
-  return NextResponse.json({
-    deletedCount: result.count,
-    deletionCutoff: deletionCutoff.toISOString(),
-  });
+    return NextResponse.json({
+      deletedCount: result.count,
+      deletionCutoff: deletionCutoff.toISOString(),
+    });
+  } catch {
+    return NextResponse.json(
+      { error: '古い出馬表の削除に失敗しました' },
+      { status: 500 }
+    );
+  }
 }

@@ -44,7 +44,7 @@
 
 ### Next.js App Router のレイヤー構成
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │ UIレイヤー (React Components)                │
 │  Server Components: /races/[id]/page.tsx     │
@@ -90,7 +90,7 @@
 
 ### LLM予想データの書き込みフロー（オーナー担当）
 
-```
+```text
 LLMパイプライン（オーナー管理）
   ↓ LLMを呼び出して予想生成
   ↓ Supabase REST API または Prisma で INSERT
@@ -138,7 +138,7 @@ model LlmPredict {
 ### パフォーマンス設計方針
 
 **LlmPredictSectionの非同期ロード**:
-```
+```text
 ページ初期表示（サーバーサイドレンダリング）
   → LlmPredictSectionはスケルトンUIを描画
   → クライアントサイドでuseEffect + fetch
@@ -182,7 +182,7 @@ CREATE UNIQUE INDEX idx_llm_predicts_race_provider ON llm_predicts(race_id, prov
 
 ### LLMプロバイダーの拡張性
 
-```
+```text
 現在                    将来的な追加
 ─────────               ─────────────────────────
 provider: "openai"   →  provider: "gemini"
