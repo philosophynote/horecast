@@ -5,11 +5,14 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
+    const oldestVisibleRaceTime = new Date();
+    oldestVisibleRaceTime.setMonth(oldestVisibleRaceTime.getMonth() - 1);
+
     // レースが存在する日付の一覧を取得（重複なし、降順）
     const raceDates = await prisma.race.findMany({
       where: {
         race_time: {
-          not: null,
+          gte: oldestVisibleRaceTime,
         },
       },
       select: {

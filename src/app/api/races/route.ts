@@ -6,6 +6,8 @@ const prisma = new PrismaClient();
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const dateParam = searchParams.get('date');
+  const oldestVisibleRaceTime = new Date();
+  oldestVisibleRaceTime.setMonth(oldestVisibleRaceTime.getMonth() - 1);
   
   // 日付指定がない場合は、直近で開催されるレースの日付を取得する
   let targetDate: Date
@@ -38,6 +40,7 @@ export async function GET(request: Request) {
       const prevRace = await prisma.race.findFirst({
         where: {
           race_time: {
+            gte: oldestVisibleRaceTime,
             lt: today,
           },
         },
@@ -56,6 +59,7 @@ export async function GET(request: Request) {
   // 指定された日付の00:00:00から23:59:59までのレースを取得
   const startOfDay = new Date(targetDate);
   startOfDay.setHours(0, 0, 0, 0);
+  const visibleStartTime = startOfDay > oldestVisibleRaceTime ? startOfDay : oldestVisibleRaceTime;
   
   const endOfDay = new Date(targetDate);
   endOfDay.setHours(23, 59, 59, 999);
@@ -63,7 +67,7 @@ export async function GET(request: Request) {
   const races = await prisma.race.findMany({
     where: {
       race_time: {
-        gte: startOfDay,
+        gte: visibleStartTime,
         lte: endOfDay,
       },
     },
