@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 function isMaintenanceModeEnabled(): boolean {
   return process.env.MAINTENANCE_MODE === "true";
@@ -32,7 +32,7 @@ function createMaintenanceResponse(): NextResponse {
   );
 }
 
-export function middleware(_request: NextRequest): NextResponse {
+export function middleware(): NextResponse {
   if (!isMaintenanceModeEnabled()) {
     return NextResponse.next();
   }
