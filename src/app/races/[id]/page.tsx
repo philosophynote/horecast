@@ -7,6 +7,7 @@ import { NavigationButtons } from "@/app/components/NavigationButtons"
 import { RecommendedBets } from "@/app/components/RecommendedBets"
 import { formatInTimeZone } from "date-fns-tz"
 import { prisma } from "@/lib/prisma"
+import { getHorseIndicatorLabels } from "@/app/lib/horseIndicators"
 
 function getCombinedAccentClass(courseType: string, track: string): string {
   const courseAccent = getCourseAccentClass(courseType)
@@ -108,6 +109,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
   if (!race) {
     return <div>レースが見つかりません</div>
   }
+  const { indicators } = await getHorseIndicatorLabels(race.netkeiba_race_id)
   const raceTime = race.race_time ? new Date(race.race_time) : null
   const formattedDate = raceTime
     ? formatInTimeZone(raceTime, 'UTC', 'yyyy年M月d日')
@@ -130,7 +132,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
           </div>
         </CardContent>
       </Card>
-      <EntryTable entries={race.entries} />
+      <EntryTable entries={race.entries} indicators={indicators} />
       <RecommendedBets bets={race.recommended_bets} entries={race.entries} />
       <div className="mt-6 flex flex-col lg:flex-row gap-6">
         {race.results && race.results.length > 0 && (
