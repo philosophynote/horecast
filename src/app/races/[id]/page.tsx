@@ -6,6 +6,7 @@ import { Race, Entry, Predict, Result, Payout, RecommendedBet } from "@prisma/cl
 import { NavigationButtons } from "@/app/components/NavigationButtons"
 import { RecommendedBets } from "@/app/components/RecommendedBets"
 import { formatInTimeZone } from "date-fns-tz"
+import { prisma } from "@/lib/prisma"
 
 function getCombinedAccentClass(courseType: string, track: string): string {
   const courseAccent = getCourseAccentClass(courseType)
@@ -56,24 +57,53 @@ type RaceWithEntriesAndPredicts = Race & {
 }
 
 
-async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredicts> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/races/${id}`, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch race');
-  }
-  return res.json();
+async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredicts | null> {
+  return prisma.race.findFirst({
+    where: { id },
+    include: {
+      entries: {
+        include: {
+          HorseMaster: true,
+          JockeyMaster: true,
+        },
+      },
+      predicts: true,
+      results: true,
+      payouts: true,
+      recommended_bets: true,
+    },
+  })
 }
 
 async function getNavigation(id: number): Promise<{ prevRaceId?: number; nextRaceId?: number }> {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/races/${id}/navigation`, { cache: "no-store" })
-  if (!res.ok) {
-    throw new Error("Failed to fetch navigation")
+  const currentRace = await prisma.race.findUnique({
+    where: { id },
+    select: { race_time: true },
+  })
+
+  if (!currentRace?.race_time) {
+    return {}
   }
-  return res.json()
+
+  const [prevRace, nextRace] = await Promise.all([
+    prisma.race.findFirst({
+      where: { race_time: { lt: currentRace.race_time } },
+      orderBy: { race_time: "desc" },
+      select: { id: true },
+    }),
+    prisma.race.findFirst({
+      where: { race_time: { gt: currentRace.race_time } },
+      orderBy: { race_time: "asc" },
+      select: { id: true },
+    }),
+  ])
+
+  return { prevRaceId: prevRace?.id, nextRaceId: nextRace?.id }
 }
 
-export default async function RacePage({ params }: { params: Promise<{ id: number }> }) {
-  const { id } = await params;
+export default async function RacePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: idParam } = await params
+  const id = Number(idParam)
   const [race, navigation] = await Promise.all([getRaceWithEntries(id), getNavigation(id)])
 
 
@@ -120,4 +150,3 @@ export default async function RacePage({ params }: { params: Promise<{ id: numbe
     </main>
   )
 }
-
