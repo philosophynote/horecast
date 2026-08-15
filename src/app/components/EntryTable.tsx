@@ -1,8 +1,7 @@
 import React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
-import { Entry, Predict } from "@prisma/client"
-import { useMemo } from "react"
+import { Entry } from "@prisma/client"
 import { groupBy } from "lodash"
 
 type EntryWithMasters = Entry & {
@@ -12,25 +11,13 @@ type EntryWithMasters = Entry & {
 
 type Props = {
   entries: EntryWithMasters[]
-  predicts: Predict[]
 }
 
 const sortByHorseNumber = (a: EntryWithMasters, b: EntryWithMasters) => {
   return a.horse_number - b.horse_number
 }
 
-export function EntryTable({ entries, predicts }: Props) {
-  const predictMarks = useMemo(() => {
-    const sortedPredicts = [...predicts].sort((a, b) => b.score - a.score)
-    const marks = ["◎", "○", "▲", "△", "×"]
-    return new Map(
-      sortedPredicts.map((predict, index) => [
-        predict.horse_number,
-        index < marks.length ? marks[index] : "×"
-      ])
-    )
-  }, [predicts])
-
+export function EntryTable({ entries }: Props) {
   // 枠番でグループ化し、各グループ内で馬番順にソート
   const groupedEntries = Object.entries(groupBy(entries, "bracket_number"))
     .map(([bracketNumber, entriesInBracket]) => ({
@@ -55,7 +42,6 @@ export function EntryTable({ entries, predicts }: Props) {
               <TableHead>馬齢</TableHead>
               <TableHead>騎手</TableHead>
               <TableHead>負担重量</TableHead>
-              <TableHead>予想印</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -74,7 +60,6 @@ export function EntryTable({ entries, predicts }: Props) {
                     <TableCell>{entry.age}</TableCell>
                     <TableCell>{entry.JockeyMaster?.name ?? "不明"}</TableCell>
                     <TableCell>{entry.jockey_weight}</TableCell>
-                    <TableCell>{predictMarks.get(entry.horse_number) ?? "×"}</TableCell>
                   </TableRow>
                 ))}
               </React.Fragment>
