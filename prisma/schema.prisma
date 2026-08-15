@@ -71,12 +71,36 @@ model Race {
   created_at       DateTime         @default(now()) @db.Timestamptz(6)
   updated_at       DateTime         @default(now()) @db.Timestamptz(6)
   race_time        DateTime?        @db.Timestamp(6)
-  entries          Entry[]
-  horse_indicators HorseIndicator[]
-  payouts          Payout[]
-  predicts         Predict[]
-  recommended_bets RecommendedBet[]
-  results          Result[]
+  entries             Entry[]
+  horse_indicators    HorseIndicator[]
+  payouts             Payout[]
+  predicts            Predict[]
+  prediction_comments RacePredictionComment[]
+  recommended_bets    RecommendedBet[]
+  results             Result[]
+}
+
+/// horecast-predictor の事前バッチが保存するレース全体のLLM予想コメント。
+/// provider ごとに1件を表示する。
+model RacePredictionComment {
+  id                  Int       @id @default(autoincrement())
+  netkeiba_race_id    String    @db.VarChar
+  provider            String    @db.VarChar
+  model_id            String?   @db.VarChar
+  comment             String
+  caveat              String?
+  warnings            String[]  @default([])
+  logic_version       String?   @db.VarChar
+  prompt_version      String    @default("") @db.VarChar
+  is_partial          Boolean   @default(false)
+  source_generated_at DateTime? @db.Timestamptz(6)
+  generated_at        DateTime? @db.Timestamptz(6)
+  openai_batch_id     String?   @db.VarChar
+  created_at          DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime  @default(now()) @db.Timestamptz(6)
+  Race                Race      @relation(fields: [netkeiba_race_id], references: [netkeiba_race_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_race_prediction_comment_netkeiba_race_id")
+
+  @@unique([netkeiba_race_id, provider, prompt_version], map: "race_prediction_comment_race_provider_prompt_key")
 }
 
 /// horecast-predictor の事前バッチが保存する馬ごとの raw 指標。
