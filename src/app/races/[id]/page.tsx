@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/app/components/ui/card"
 import { EntryTable } from "@/app/components/EntryTable"
 import { RaceResultTable } from "@/app/components/RaceResultTable"
 import { PayoutTable } from "@/app/components/PayoutTable"
-import { Race, Entry, Predict, Result, Payout, RecommendedBet } from "@prisma/client"
+import { Race, Entry, Result, Payout, RecommendedBet } from "@prisma/client"
 import { NavigationButtons } from "@/app/components/NavigationButtons"
 import { RecommendedBets } from "@/app/components/RecommendedBets"
 import { formatInTimeZone } from "date-fns-tz"
@@ -48,16 +48,15 @@ type EntryWithMasters = Entry & {
   JockeyMaster: { name: string }
 }
 
-type RaceWithEntriesAndPredicts = Race & {
+type RaceWithEntries = Race & {
   entries: EntryWithMasters[]
-  predicts: Predict[]
   results: Result[]
   payouts: Payout[]
   recommended_bets: RecommendedBet[]
 }
 
 
-async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredicts | null> {
+async function getRaceWithEntries(id: number): Promise<RaceWithEntries | null> {
   return prisma.race.findFirst({
     where: { id },
     include: {
@@ -67,7 +66,6 @@ async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredict
           JockeyMaster: true,
         },
       },
-      predicts: true,
       results: true,
       payouts: true,
       recommended_bets: true,
@@ -132,7 +130,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
           </div>
         </CardContent>
       </Card>
-      <EntryTable entries={race.entries} predicts={race.predicts} />
+      <EntryTable entries={race.entries} />
       <RecommendedBets bets={race.recommended_bets} entries={race.entries} />
       <div className="mt-6 flex flex-col lg:flex-row gap-6">
         {race.results && race.results.length > 0 && (
