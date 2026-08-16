@@ -2,7 +2,7 @@ import React from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Badge } from "@/app/components/ui/badge"
-import { Entry } from "@prisma/client"
+import { Entry, Predict } from "@prisma/client"
 import { groupBy } from "lodash"
 import { HorseIndicatorLabels, IndicatorLabel, INSUFFICIENT_LABEL } from "@/app/lib/indicatorLabels"
 
@@ -13,6 +13,7 @@ type EntryWithMasters = Entry & {
 
 type Props = {
   entries: EntryWithMasters[]
+  predicts: Predict[]
   indicators?: HorseIndicatorLabels[]
 }
 
@@ -58,7 +59,7 @@ function IndicatorBadges({ labels }: { labels?: HorseIndicatorLabels }) {
   )
 }
 
-export function EntryTable({ entries, indicators = [] }: Props) {
+export function EntryTable({ entries, predicts, indicators = [] }: Props) {
   // 枠番でグループ化し、各グループ内で馬番順にソート
   const groupedEntries = Object.entries(groupBy(entries, "bracket_number"))
     .map(([bracketNumber, entriesInBracket]) => ({
@@ -68,6 +69,12 @@ export function EntryTable({ entries, indicators = [] }: Props) {
     .sort((a, b) => a.bracketNumber - b.bracketNumber)
 
   const indicatorMap = new Map(indicators.map((indicator) => [indicator.horseNumber, indicator]))
+  const marks = ["◎", "○", "▲", "△", "×"]
+  const predictMarks = new Map(
+    [...predicts]
+      .sort((a, b) => b.score - a.score)
+      .map((predict, index) => [predict.horse_number, marks[index] ?? "×"])
+  )
   // 指標が1件も無いレースでは列そのものを表示しない
   const hasIndicators = indicators.length > 0
 
@@ -88,6 +95,7 @@ export function EntryTable({ entries, indicators = [] }: Props) {
               <TableHead>馬齢</TableHead>
               <TableHead>騎手</TableHead>
               <TableHead>負担重量</TableHead>
+              <TableHead>予想印</TableHead>
               {hasIndicators && <TableHead className="min-w-[240px]">AI指標</TableHead>}
             </TableRow>
           </TableHeader>
@@ -107,6 +115,7 @@ export function EntryTable({ entries, indicators = [] }: Props) {
                     <TableCell>{entry.age}</TableCell>
                     <TableCell className="whitespace-nowrap">{entry.JockeyMaster?.name ?? "不明"}</TableCell>
                     <TableCell>{entry.jockey_weight}</TableCell>
+                    <TableCell>{predictMarks.get(entry.horse_number) ?? "×"}</TableCell>
                     {hasIndicators && (
                       <TableCell className="min-w-[240px]">
                         <IndicatorBadges labels={indicatorMap.get(entry.horse_number)} />
