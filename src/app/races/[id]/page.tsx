@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/app/components/ui/card"
 import { EntryTable } from "@/app/components/EntryTable"
 import { RaceResultTable } from "@/app/components/RaceResultTable"
 import { PayoutTable } from "@/app/components/PayoutTable"
-import { Race, Entry, Result, Payout, RecommendedBet } from "@prisma/client"
+import { Race, Entry, Predict, Result, Payout, RecommendedBet } from "@prisma/client"
 import { NavigationButtons } from "@/app/components/NavigationButtons"
 import { RecommendedBets } from "@/app/components/RecommendedBets"
 import {
@@ -54,15 +54,16 @@ type EntryWithMasters = Entry & {
   JockeyMaster: { name: string }
 }
 
-type RaceWithEntries = Race & {
+type RaceWithEntriesAndPredicts = Race & {
   entries: EntryWithMasters[]
+  predicts: Predict[]
   results: Result[]
   payouts: Payout[]
   recommended_bets: RecommendedBet[]
 }
 
 
-async function getRaceWithEntries(id: number): Promise<RaceWithEntries | null> {
+async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredicts | null> {
   return prisma.race.findFirst({
     where: { id },
     include: {
@@ -72,6 +73,7 @@ async function getRaceWithEntries(id: number): Promise<RaceWithEntries | null> {
           JockeyMaster: true,
         },
       },
+      predicts: true,
       results: true,
       payouts: true,
       recommended_bets: true,
@@ -137,7 +139,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
           </div>
         </CardContent>
       </Card>
-      <EntryTable entries={race.entries} indicators={indicators} />
+      <EntryTable entries={race.entries} predicts={race.predicts} indicators={indicators} />
       <Suspense fallback={<RacePredictionCommentsSkeleton />}>
         <RacePredictionComments netkeibaRaceId={race.netkeiba_race_id} />
       </Suspense>
