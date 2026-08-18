@@ -5,14 +5,9 @@ import { PayoutTable } from "@/app/components/PayoutTable"
 import { Race, Entry, Predict, Result, Payout, RecommendedBet } from "@prisma/client"
 import { NavigationButtons } from "@/app/components/NavigationButtons"
 import { RecommendedBets } from "@/app/components/RecommendedBets"
-import {
-  RacePredictionComments,
-  RacePredictionCommentsSkeleton,
-} from "@/app/components/RacePredictionComments"
 import { formatInTimeZone } from "date-fns-tz"
 import { prisma } from "@/lib/prisma"
 import { getHorseIndicatorLabels } from "@/app/lib/horseIndicators"
-import { Suspense } from "react"
 
 function getCombinedAccentClass(courseType: string, track: string): string {
   const courseAccent = getCourseAccentClass(courseType)
@@ -140,9 +135,6 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
         </CardContent>
       </Card>
       <EntryTable entries={race.entries} predicts={race.predicts} indicators={indicators} />
-      <Suspense fallback={<RacePredictionCommentsSkeleton />}>
-        <RacePredictionComments netkeibaRaceId={race.netkeiba_race_id} />
-      </Suspense>
       <RecommendedBets bets={race.recommended_bets} entries={race.entries} />
       <div className="mt-6 flex flex-col lg:flex-row gap-6">
         {race.results && race.results.length > 0 && (
