@@ -40,7 +40,7 @@ export function RecommendedBets({ bets, entries }: Props) {
 
   if (bets.length === 0) {
     return (
-      <Card className="mt-8 bg-white border border-gray-200 shadow-sm">
+      <Card className="mt-8 bg-white border border-gray-200 shadow-xs">
         <CardHeader>
           <CardTitle>レコメンド馬券</CardTitle>
         </CardHeader>
@@ -65,7 +65,7 @@ export function RecommendedBets({ bets, entries }: Props) {
   const balance = hitAmount - totalAmount
 
   return (
-    <Card className="mt-8 bg-white border border-gray-200 shadow-sm">
+    <Card className="mt-8 bg-white border border-gray-200 shadow-xs">
       <CardHeader>
         <CardTitle>レコメンド馬券</CardTitle>
       </CardHeader>

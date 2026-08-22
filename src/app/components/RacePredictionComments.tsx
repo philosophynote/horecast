@@ -36,7 +36,7 @@ function formatGeneratedAt(generatedAt: string): string | null {
 
 function CommentsCard({ children }: { children: React.ReactNode }) {
   return (
-    <Card className="mt-8 bg-white border border-gray-200 shadow-sm">
+    <Card className="mt-8 bg-white border border-gray-200 shadow-xs">
       <CardHeader>
         <CardTitle>AI予想コメント</CardTitle>
       </CardHeader>

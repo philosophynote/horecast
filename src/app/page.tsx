@@ -180,7 +180,7 @@ export default function Home() {
                             fill
                             className="absolute inset-0 opacity-50 filter grayscale object-cover"
                           />
-                          <CardHeader className="relative bg-white/70 backdrop-blur-sm p-2 rounded-lg h-full flex items-center justify-center">
+                          <CardHeader className="relative bg-white/70 backdrop-blur-xs p-2 rounded-lg h-full flex items-center justify-center">
                             <CardTitle className="text-4xl font-bold text-gray-800">{track}</CardTitle>
                           </CardHeader>
                         </Card>
@@ -196,7 +196,7 @@ export default function Home() {
           </div>
 
           {/* デスクトップ用右側の日付セレクター */}
-          <div className="hidden lg:block w-64 flex-shrink-0">
+          <div className="hidden lg:block w-64 shrink-0">
             <div className="sticky top-6">
               <DateSelector 
                 selectedDate={selectedDate} 
