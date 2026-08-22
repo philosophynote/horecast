@@ -66,6 +66,8 @@ export default function Home() {
 
   useEffect(() => {
     if (selectedDate) {
+      // TODO: fetch 中の loading 表示を保ったまま同期 setState を無くす形へ移行する
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchRaces(selectedDate)
     }
   }, [selectedDate])
