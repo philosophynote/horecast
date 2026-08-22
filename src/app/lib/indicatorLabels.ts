@@ -15,12 +15,11 @@ const ABILITY_LABELS = ["最上位", "上位", "標準", "やや下位", "下位
 const CONDITION_LABELS = ["高い", "やや高い", "標準", "やや不安", "不安"] as const
 /** 展開適性：pace_fit / pace_score */
 const PACE_LABELS = ["展開有利", "やや有利", "中立", "やや不利", "展開不利"] as const
-/** 近走状態：freshness（算出不可は判断材料不足） */
+/** 近走状態：freshness.days_since_last_race（算出不可は判断材料不足） */
 const FRESHNESS_LABELS = ["好調", "安定", "平行線", "やや不安"] as const
 
 /** 上位から順に区切るしきい値。50（同値）は中央のラベルへ入る */
 const FIVE_LEVEL_THRESHOLDS = [80, 60, 40, 20]
-const FOUR_LEVEL_THRESHOLDS = [75, 55, 35]
 
 export type IndicatorLabel = {
   label: string
@@ -48,7 +47,7 @@ export type HorseIndicatorSource = {
   base_ability: number | null
   condition_fit: number | null
   pace_fit: number | null
-  freshness: number | null
+  freshness: unknown
   history_count?: number | null
 }
 
@@ -65,6 +64,22 @@ function toLabel(
   const index = thresholds.findIndex((threshold) => score >= threshold)
   const level = index === -1 ? labels.length - 1 : index
   return { label: labels[level], level }
+}
+
+function toFreshnessLabel(freshness: unknown): IndicatorLabel {
+  if (freshness === null || typeof freshness !== "object" || Array.isArray(freshness)) {
+    return insufficient()
+  }
+
+  const daysSinceLastRace = (freshness as Record<string, unknown>).days_since_last_race
+  if (typeof daysSinceLastRace !== "number" || Number.isNaN(daysSinceLastRace)) {
+    return insufficient()
+  }
+
+  if (daysSinceLastRace <= 14) return { label: FRESHNESS_LABELS[0], level: 0 }
+  if (daysSinceLastRace <= 42) return { label: FRESHNESS_LABELS[1], level: 1 }
+  if (daysSinceLastRace <= 84) return { label: FRESHNESS_LABELS[2], level: 2 }
+  return { label: FRESHNESS_LABELS[3], level: 3 }
 }
 
 export function toHorseIndicatorLabels(
@@ -85,7 +100,7 @@ export function toHorseIndicatorLabels(
     ? toLabel(indicator.pace_fit, PACE_LABELS, FIVE_LEVEL_THRESHOLDS)
     : insufficient()
   const freshness = hasHistory
-    ? toLabel(indicator.freshness, FRESHNESS_LABELS, FOUR_LEVEL_THRESHOLDS)
+    ? toFreshnessLabel(indicator.freshness)
     : insufficient()
 
   return {
