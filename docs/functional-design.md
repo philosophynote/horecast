@@ -41,8 +41,8 @@ graph TB
 
 | 分類 | 技術 | 選定理由 |
 |------|------|----------|
-| フレームワーク | Next.js 15 (App Router) | 既存プロジェクトのスタック |
-| ORM | Prisma 6 | 既存プロジェクトのスタック |
+| フレームワーク | Next.js 16 (App Router) | 既存プロジェクトのスタック |
+| ORM | Prisma 7 | 既存プロジェクトのスタック |
 | DB | PostgreSQL (Supabase) | 既存プロジェクトのスタック |
 | UI | Tailwind CSS + shadcn/ui | 既存プロジェクトのスタック |
 | 言語 | TypeScript 5 | 既存プロジェクトのスタック |
