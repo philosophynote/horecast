@@ -114,12 +114,12 @@ model HorseIndicator {
   base_ability     Float?
   condition_fit    Float?
   pace_fit         Float?
-  freshness        Float?
+  freshness        Json?     @db.JsonB
   history_count    Int       @default(0)
   rank             Int?
-  positive_factors String[]  @default([])
-  risks            String[]  @default([])
-  warnings         String[]  @default([])
+  positive_factors Json      @default("[]") @db.JsonB
+  risks            Json      @default("[]") @db.JsonB
+  warnings         Json      @default("[]") @db.JsonB
   expected_pace    String?   @db.VarChar
   logic_version    String?   @db.VarChar
   is_partial       Boolean   @default(false)
