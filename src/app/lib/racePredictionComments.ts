@@ -1,14 +1,18 @@
 import { RacePredictionComment } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
+import {
+  parseRacePredictionWarnings,
+  RacePredictionWarning,
+} from "@/app/lib/racePredictionCommentWarnings"
 
 export type RacePredictionCommentView = {
   provider: string
   modelId: string | null
   comment: string
   caveat: string | null
-  warnings: string[]
+  warnings: RacePredictionWarning[]
   isPartial: boolean
-  generatedAt: string | null
+  generatedAt: string
 }
 
 /**
@@ -20,7 +24,7 @@ export type RacePredictionCommentsResult =
   | { status: "error"; comments: [] }
 
 function generatedTime(comment: RacePredictionComment): number {
-  return (comment.generated_at ?? comment.created_at).getTime()
+  return comment.generated_at.getTime()
 }
 
 /**
@@ -47,9 +51,9 @@ function toView(comment: RacePredictionComment): RacePredictionCommentView {
     modelId: comment.model_id,
     comment: comment.comment,
     caveat: comment.caveat,
-    warnings: comment.warnings,
+    warnings: parseRacePredictionWarnings(comment.warnings),
     isPartial: comment.is_partial,
-    generatedAt: (comment.generated_at ?? comment.created_at).toISOString(),
+    generatedAt: comment.generated_at.toISOString(),
   }
 }
 

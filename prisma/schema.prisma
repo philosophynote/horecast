@@ -89,12 +89,12 @@ model RacePredictionComment {
   model_id            String?   @db.VarChar
   comment             String
   caveat              String?
-  warnings            String[]  @default([])
+  warnings            Json      @default("[]") @db.JsonB
   logic_version       String?   @db.VarChar
   prompt_version      String    @default("") @db.VarChar
   is_partial          Boolean   @default(false)
   source_generated_at DateTime? @db.Timestamptz(6)
-  generated_at        DateTime? @db.Timestamptz(6)
+  generated_at        DateTime  @default(now()) @db.Timestamptz(6)
   openai_batch_id     String?   @db.VarChar
   created_at          DateTime  @default(now()) @db.Timestamptz(6)
   updated_at          DateTime  @default(now()) @db.Timestamptz(6)

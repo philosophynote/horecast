@@ -26,10 +26,7 @@ function providerName(provider: string): string {
   return PROVIDER_NAMES[provider.toLowerCase()] ?? provider
 }
 
-function formatGeneratedAt(generatedAt: string | null): string | null {
-  if (!generatedAt) {
-    return null
-  }
+function formatGeneratedAt(generatedAt: string): string | null {
   const date = new Date(generatedAt)
   if (Number.isNaN(date.getTime())) {
     return null
@@ -88,8 +85,12 @@ function ProviderComment({ comment }: { comment: RacePredictionCommentView }) {
       )}
       {comment.warnings.length > 0 && (
         <ul className="mt-2 space-y-1 text-sm text-gray-600">
-          {comment.warnings.map((warning) => (
-            <li key={warning}>{warning}</li>
+          {comment.warnings.map((warning, index) => (
+            <li
+              key={`${warning.code ?? "warning"}-${warning.horseNumber ?? "race"}-${index}`}
+            >
+              {warning.message}
+            </li>
           ))}
         </ul>
       )}
