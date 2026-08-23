@@ -26,7 +26,7 @@ export function RaceCard({ race }: { race: Race }) {
 
   return (
     <Link href={`/races/${race.id}`} className="block mb-4">
-      <Card className={`hover:shadow-lg transition-shadow duration-200 relative min-h-[120px] bg-white border border-gray-200 shadow-sm ${getAccentClass(race.course_type)}`}>
+      <Card className={`hover:shadow-lg transition-shadow duration-200 relative min-h-[120px] bg-white border border-gray-200 shadow-xs ${getAccentClass(race.course_type)}`}>
         <div className="flex flex-col h-full justify-between">
           <div className="p-4">
             <div className="flex items-center gap-2">

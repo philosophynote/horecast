@@ -24,10 +24,10 @@ interface StatisticsData {
 export function StatisticsView() {
   const [data, setData] = useState<StatisticsData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [dateRange, setDateRange] = useState({
+  const [dateRange, setDateRange] = useState(() => ({
     startDate: format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd')
-  })
+  }))
 
   const fetchStatistics = async () => {
     setLoading(true)
@@ -51,6 +51,8 @@ export function StatisticsView() {
   }
 
   useEffect(() => {
+    // TODO: fetch 中の loading 表示を保ったまま同期 setState を無くす形へ移行する
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchStatistics()
   }, [dateRange])
 

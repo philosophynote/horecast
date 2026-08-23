@@ -20,7 +20,7 @@ export function RaceResultTable({ results }: Props) {
         <CardTitle>結果</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table className="w-[1000px]">
+        <Table className="w-full">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">着順</TableHead>

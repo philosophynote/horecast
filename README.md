@@ -65,7 +65,7 @@ src/
 
 ## 使用技術
 
-- **Next.js 15** / **React 19** – アプリケーションフレームワーク
+- **Next.js 16** / **React 19** – アプリケーションフレームワーク
 - **TypeScript** – 型安全なフロントエンド開発
  - **Prisma** – Supabase と接続する ORM
 - **Tailwind CSS** – UI スタイリング

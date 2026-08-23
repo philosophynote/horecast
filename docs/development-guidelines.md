@@ -1,6 +1,6 @@
 # 開発ガイドライン (Development Guidelines)
 
-> 対象: Horecast - Next.js 15 / Prisma / Supabase / Tailwind CSS / TypeScript
+> 対象: Horecast - Next.js 16 / Prisma / Supabase / Tailwind CSS / TypeScript
 
 ---
 

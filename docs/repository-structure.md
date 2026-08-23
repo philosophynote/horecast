@@ -76,7 +76,7 @@ horecast/
 ├── next.config.ts
 ├── package.json
 ├── postcss.config.mjs
-├── tailwind.config.ts
+├── prisma.config.ts                 # Prismaの接続・マイグレーション設定
 └── tsconfig.json
 ```
 

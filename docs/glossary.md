@@ -139,7 +139,7 @@ Horecastプロジェクト内で使用される用語の定義を管理します
 
 **本プロジェクトでの用途**: ページ（`page.tsx`）とAPIエンドポイント（`route.ts`）の両方を `src/app/` 以下で管理。Server ComponentとClient Componentを使い分ける。
 
-**バージョン**: Next.js 15.1.11
+**バージョン**: Next.js 16.3.2
 
 ---
 
@@ -169,7 +169,7 @@ Horecastプロジェクト内で使用される用語の定義を管理します
 
 **本プロジェクトでの用途**: Supabase PostgreSQLへのアクセスに使用。`prisma/schema.prisma` でスキーマを管理。
 
-**バージョン**: 6.1.0
+**バージョン**: 7.9.1
 
 ---
 
