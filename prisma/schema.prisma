@@ -55,6 +55,8 @@ model Predict {
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   updated_at       DateTime? @default(now()) @db.Timestamp(6)
   Race             Race      @relation(fields: [netkeiba_race_id], references: [netkeiba_race_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_netkeiba_race_id")
+
+  @@index([netkeiba_race_id])
 }
 
 model Race {
@@ -76,6 +78,8 @@ model Race {
   prediction_comments RacePredictionComment[]
   recommended_bets    RecommendedBet[]
   results             Result[]
+
+  @@index([race_time])
 }
 
 /// horecast-predictor の事前バッチが保存するレース全体のLLM予想コメント。
@@ -142,6 +146,8 @@ model Result {
   created_at   DateTime @default(now()) @db.Timestamptz(6)
   updated_at   DateTime @default(now()) @db.Timestamptz(6)
   Race         Race     @relation(fields: [race_id], references: [id])
+
+  @@index([race_id])
 }
 
 model Payout {
@@ -153,6 +159,8 @@ model Payout {
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @default(now()) @db.Timestamptz(6)
   Race       Race     @relation(fields: [race_id], references: [id])
+
+  @@index([race_id])
 }
 
 model RecommendedBet {
@@ -165,4 +173,6 @@ model RecommendedBet {
   updated_at DateTime @default(now()) @db.Timestamptz(6)
   bet        Int      @default(100)
   Race       Race     @relation(fields: [race_id], references: [id])
+
+  @@index([race_id])
 }

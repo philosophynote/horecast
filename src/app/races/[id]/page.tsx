@@ -11,7 +11,7 @@ import {
 } from "@/app/components/RacePredictionComments"
 import { formatInTimeZone } from "date-fns-tz"
 import { prisma } from "@/lib/prisma"
-import { getHorseIndicatorLabels } from "@/app/lib/horseIndicators"
+import { getHorseIndicatorLabelsByRaceId } from "@/app/lib/horseIndicators"
 import { Suspense } from "react"
 
 function getCombinedAccentClass(courseType: string, track: string): string {
@@ -64,7 +64,7 @@ type RaceWithEntriesAndPredicts = Race & {
 
 
 async function getRaceWithEntries(id: number): Promise<RaceWithEntriesAndPredicts | null> {
-  return prisma.race.findFirst({
+  return prisma.race.findUnique({
     where: { id },
     include: {
       entries: {
@@ -110,13 +110,17 @@ async function getNavigation(id: number): Promise<{ prevRaceId?: number; nextRac
 export default async function RacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: idParam } = await params
   const id = Number(idParam)
-  const [race, navigation] = await Promise.all([getRaceWithEntries(id), getNavigation(id)])
+  const [race, navigation, indicatorResult] = await Promise.all([
+    getRaceWithEntries(id),
+    getNavigation(id),
+    getHorseIndicatorLabelsByRaceId(id),
+  ])
 
 
   if (!race) {
     return <div>レースが見つかりません</div>
   }
-  const { indicators } = await getHorseIndicatorLabels(race.netkeiba_race_id)
+  const { indicators } = indicatorResult
   const raceTime = race.race_time ? new Date(race.race_time) : null
   const formattedDate = raceTime
     ? formatInTimeZone(raceTime, 'UTC', 'yyyy年M月d日')

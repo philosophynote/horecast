@@ -7,7 +7,7 @@ export async function GET(
 ) {
   const { id } = await context.params;
 
-  const race = await prisma.race.findFirst({
+  const race = await prisma.race.findUnique({
     where: { id: Number(id) },
     include: {
       entries: {
