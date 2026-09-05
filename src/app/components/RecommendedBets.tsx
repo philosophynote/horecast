@@ -9,7 +9,12 @@ type EntryWithHorse = {
   } | null
 }
 
-function uniqueNumbers(bets: RecommendedBet[]): string {
+export type RecommendedBetDisplay = Pick<
+  RecommendedBet,
+  "bet_type" | "numbers" | "payout" | "bet"
+>
+
+function uniqueNumbers(bets: RecommendedBetDisplay[]): string {
   const nums = new Set<number>()
   bets.forEach((b) => {
     b.numbers
@@ -25,29 +30,33 @@ function uniqueNumbers(bets: RecommendedBet[]): string {
 }
 
 interface Props {
-  bets: RecommendedBet[]
   entries: EntryWithHorse[]
+  sections: Array<{
+    title: string
+    bets: RecommendedBetDisplay[]
+    emptyMessage?: string
+  }>
 }
 
-export function RecommendedBets({ bets, entries }: Props) {
-  // 馬番から馬名へのマッピングを作成
-  const horseNameMap = new Map(
-    entries.map(entry => [
-      entry.horse_number,
-      entry.HorseMaster?.name ?? "不明"
-    ])
-  )
+type SectionProps = {
+  title: string
+  bets: RecommendedBetDisplay[]
+  horseNameMap: Map<number, string>
+  emptyMessage?: string
+}
 
+function RecommendedBetSection({
+  title,
+  bets,
+  horseNameMap,
+  emptyMessage = "レコメンド馬券はまだ登録されていません",
+}: SectionProps) {
   if (bets.length === 0) {
     return (
-      <Card className="mt-8 bg-white border border-gray-200 shadow-xs">
-        <CardHeader>
-          <CardTitle>レコメンド馬券</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center text-gray-600">レコメンド馬券はまだ登録されていません</p>
-        </CardContent>
-      </Card>
+      <section className="rounded-lg border border-gray-200 bg-gray-50 p-5">
+        <h3 className="mb-4 text-center text-xl font-semibold">{title}</h3>
+        <p className="py-8 text-center text-gray-600">{emptyMessage}</p>
+      </section>
     )
   }
 
@@ -65,13 +74,10 @@ export function RecommendedBets({ bets, entries }: Props) {
   const balance = hitAmount - totalAmount
 
   return (
-    <Card className="mt-8 bg-white border border-gray-200 shadow-xs">
-      <CardHeader>
-        <CardTitle>レコメンド馬券</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {Object.entries(grouped).map(([betType, betGroup]) => {
+    <section className="rounded-lg border border-gray-200 bg-gray-50 p-5">
+      <h3 className="mb-4 text-center text-xl font-semibold">{title}</h3>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+        {Object.entries(grouped).map(([betType, betGroup]) => {
             const total = betGroup.reduce((sum, b) => sum + b.bet, 0)
             const sorted =
               betType === "複勝"
@@ -80,7 +86,7 @@ export function RecommendedBets({ bets, entries }: Props) {
             if (betType === "ワイド") {
               const nums = uniqueNumbers(betGroup)
               return (
-                <div key={betType} className="bg-gray-100 p-4 rounded-lg min-h-[180px] flex flex-col border border-gray-200">
+                <div key={betType} className="bg-white p-4 rounded-lg min-h-[180px] flex flex-col border border-gray-200">
                   <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
                   <div className="flex flex-col items-center justify-center flex-1">
                     <p className="text-center mb-3">ボックス: {nums}</p>
@@ -91,21 +97,21 @@ export function RecommendedBets({ bets, entries }: Props) {
               )
             }
             return (
-              <div key={betType} className="bg-gray-100 p-4 rounded-lg min-h-[180px] flex flex-col border border-gray-200">
+              <div key={betType} className="bg-white p-4 rounded-lg min-h-[180px] flex flex-col border border-gray-200">
                 <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
                 <ul className="space-y-2 flex-1">
-                  {sorted.map((bet) => {
+                  {sorted.map((bet, index) => {
                     if (betType === "複勝") {
                       const horseNumber = parseInt(bet.numbers, 10)
                       const horseName = horseNameMap.get(horseNumber) || "不明"
                       return (
-                        <li key={bet.id} className="pb-1 last:border-b-0">
+                        <li key={`${bet.bet_type}-${bet.numbers}-${index}`} className="pb-1 last:border-b-0">
                           {bet.numbers} {horseName} - {bet.bet}円
                         </li>
                       )
                     }
                     return (
-                      <li key={bet.id} className="pb-1 last:border-b-0">
+                      <li key={`${bet.bet_type}-${bet.numbers}-${index}`} className="pb-1 last:border-b-0">
                         {bet.numbers} - {bet.bet}円
                       </li>
                     )
@@ -116,17 +122,17 @@ export function RecommendedBets({ bets, entries }: Props) {
                 </p>
               </div>
             )
-          })}
-        </div>
+        })}
+      </div>
 
-        <div className="mt-6 pt-4 border-t text-center">
-          <p className="font-bold text-lg">合計金額: {totalAmount}円</p>
-        </div>
+      <div className="mt-6 pt-4 border-t text-center">
+        <p className="font-bold text-lg">合計金額: {totalAmount}円</p>
+      </div>
 
-        {hitDetails.length > 0 && (
-          <div className="mt-6 pt-4 border-t">
-            <h3 className="text-lg font-semibold mb-3 text-center">的中結果</h3>
-            <div className="space-y-4">
+      {hitDetails.length > 0 && (
+        <div className="mt-6 pt-4 border-t">
+          <h3 className="text-lg font-semibold mb-3 text-center">的中結果</h3>
+          <div className="space-y-4">
               <ul className="space-y-2">
                 {hitDetails.map((hit) => (
                   <li key={`${hit.type}-${hit.numbers}`} className="flex justify-between items-center pb-1">
@@ -158,9 +164,38 @@ export function RecommendedBets({ bets, entries }: Props) {
                   {totalAmount > 0 ? Math.round((hitAmount / totalAmount) * 100) : 0}%
                 </span>
               </div>
-            </div>
           </div>
-        )}
+        </div>
+      )}
+    </section>
+  )
+}
+
+export function RecommendedBets({ entries, sections }: Props) {
+  const horseNameMap = new Map(
+    entries.map(entry => [
+      entry.horse_number,
+      entry.HorseMaster?.name ?? "不明"
+    ])
+  )
+
+  return (
+    <Card className="mt-8 bg-white border border-gray-200 shadow-xs">
+      <CardHeader>
+        <CardTitle>レコメンド馬券</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {sections.map((section) => (
+            <RecommendedBetSection
+              key={section.title}
+              title={section.title}
+              bets={section.bets}
+              horseNameMap={horseNameMap}
+              emptyMessage={section.emptyMessage}
+            />
+          ))}
+        </div>
       </CardContent>
     </Card>
   )

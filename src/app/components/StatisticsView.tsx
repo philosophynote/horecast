@@ -1,15 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card'
 import { format } from 'date-fns'
-import { BetStatistics } from '@/app/lib/statistics'
+import type { BetStatistics } from '@/app/lib/statistics'
 
 interface StatisticsData {
   period: {
     startDate: string
     endDate: string
   }
+  models: Record<StatisticsModel, ModelStatistics>
+}
+
+type StatisticsModel = 'original' | 'openai'
+
+interface ModelStatistics {
   totalRaces: number
   overallStatistics: BetStatistics
   raceStatistics: Array<{
@@ -21,15 +27,21 @@ interface StatisticsData {
   }>
 }
 
+const MODEL_TABS: Array<{ value: StatisticsModel; label: string }> = [
+  { value: 'original', label: '独自予想モデル' },
+  { value: 'openai', label: 'OpenAIモデル' }
+]
+
 export function StatisticsView() {
   const [data, setData] = useState<StatisticsData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [activeModel, setActiveModel] = useState<StatisticsModel>('original')
   const [dateRange, setDateRange] = useState(() => ({
     startDate: format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd')
   }))
 
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -48,13 +60,13 @@ export function StatisticsView() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [dateRange])
 
   useEffect(() => {
     // TODO: fetch 中の loading 表示を保ったまま同期 setState を無くす形へ移行する
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchStatistics()
-  }, [dateRange])
+  }, [fetchStatistics])
 
   const formatCurrency = (amount: number) => {
     return `¥${amount.toLocaleString()}`
@@ -80,7 +92,8 @@ export function StatisticsView() {
     )
   }
 
-  const { overallStatistics } = data
+  const modelData = data.models[activeModel]
+  const { overallStatistics } = modelData
 
   return (
     <div className="space-y-6">
@@ -113,6 +126,27 @@ export function StatisticsView() {
         </CardContent>
       </Card>
 
+      <div className="border-b border-gray-200" role="tablist" aria-label="予想モデル">
+        <nav className="flex gap-8">
+          {MODEL_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              role="tab"
+              aria-selected={activeModel === tab.value}
+              onClick={() => setActiveModel(tab.value)}
+              className={`border-b-2 px-1 py-3 text-sm font-medium transition-colors ${
+                activeModel === tab.value
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
       {/* 全体統計 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -121,7 +155,7 @@ export function StatisticsView() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{overallStatistics.totalBets}</div>
-            <p className="text-xs text-muted-foreground">対象レース: {data.totalRaces}レース</p>
+            <p className="text-xs text-muted-foreground">対象レース: {modelData.totalRaces}レース</p>
           </CardContent>
         </Card>
 
@@ -226,7 +260,7 @@ export function StatisticsView() {
                 </tr>
               </thead>
               <tbody>
-                {data.raceStatistics.slice(0, 10).map((race) => (
+                {modelData.raceStatistics.slice(0, 10).map((race) => (
                   <tr key={race.raceId} className="border-b">
                     <td className="p-2">{race.track}</td>
                     <td className="p-2">{race.raceName}</td>

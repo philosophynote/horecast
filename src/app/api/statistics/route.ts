@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma';
 import { matchBetsWithPayouts, calculateStatistics, aggregateStatistics } from '@/app/lib/statistics'
+import { toHorsePredictionRanks } from '@/app/lib/horseIndicators'
+import { buildRecommendedBetsFromRanks } from '@/app/lib/predictionRecommendations'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,51 +17,86 @@ export async function GET(request: NextRequest) {
     
     const start = startDate ? new Date(startDate) : defaultStartDate
     const end = endDate ? new Date(endDate) : defaultEndDate
+    const endExclusive = new Date(end)
+    if (endDate) {
+      endExclusive.setUTCDate(endExclusive.getUTCDate() + 1)
+    }
     
-    // 指定期間のレースを取得（推奨ベットとペイアウト情報を含む）
+    // 指定期間のレースを取得（両モデルの予想とペイアウト情報を含む）
     const races = await prisma.race.findMany({
       where: {
         race_time: {
           gte: start,
-          lte: end
+          lt: endExclusive
         },
-        // 推奨ベットがあるレースのみ
-        recommended_bets: {
-          some: {}
-        }
+        // 結果未確定のレースを不的中として集計しない
+        payouts: { some: {} },
+        OR: [
+          { recommended_bets: { some: {} } },
+          { horse_indicators: { some: { rank: { not: null } } } }
+        ]
       },
       include: {
         recommended_bets: true,
-        payouts: true
+        payouts: true,
+        horse_indicators: {
+          select: {
+            horse_number: true,
+            rank: true,
+            logic_version: true,
+            generated_at: true,
+            created_at: true
+          }
+        }
       },
       orderBy: {
         race_time: 'desc'
       }
     })
     
-    // 各レースの統計を計算
-    const raceStatistics = races.map(race => {
-      const betResults = matchBetsWithPayouts(race.recommended_bets, race.payouts)
-      return calculateStatistics(betResults)
+    const raceSummary = (race: typeof races[number], statistics: ReturnType<typeof calculateStatistics>) => ({
+      raceId: race.id,
+      raceTime: race.race_time,
+      track: race.track,
+      raceName: race.name,
+      statistics
     })
-    
-    // 全体の統計を集計
-    const overallStatistics = aggregateStatistics(raceStatistics)
+
+    const originalRaceStatistics = races
+      .filter(race => race.recommended_bets.length > 0)
+      .map(race => raceSummary(
+        race,
+        calculateStatistics(matchBetsWithPayouts(race.recommended_bets, race.payouts))
+      ))
+
+    const openAiRaceStatistics = races.flatMap(race => {
+      const ranks = toHorsePredictionRanks(race.horse_indicators)
+      const bets = buildRecommendedBetsFromRanks(ranks)
+      if (bets.length === 0) return []
+
+      return [raceSummary(
+        race,
+        calculateStatistics(matchBetsWithPayouts(bets, race.payouts))
+      )]
+    })
+
+    const modelStatistics = (raceStatistics: typeof originalRaceStatistics) => ({
+      totalRaces: raceStatistics.length,
+      overallStatistics: aggregateStatistics(
+        raceStatistics.map(race => race.statistics)
+      ),
+      raceStatistics
+    })
     
     return NextResponse.json({
       period: {
         startDate: start.toISOString(),
         endDate: end.toISOString()
       },
-      totalRaces: races.length,
-      overallStatistics,
-      raceStatistics: races.map((race, index) => ({
-        raceId: race.id,
-        raceTime: race.race_time,
-        track: race.track,
-        raceName: race.name,
-        statistics: raceStatistics[index]
-      }))
+      models: {
+        original: modelStatistics(originalRaceStatistics),
+        openai: modelStatistics(openAiRaceStatistics)
+      }
     })
   } catch (error) {
     console.error('Error fetching statistics:', error)

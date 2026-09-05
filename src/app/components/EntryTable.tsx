@@ -5,6 +5,7 @@ import { Badge } from "@/app/components/ui/badge"
 import { Entry, Predict } from "@prisma/client"
 import { groupBy } from "lodash"
 import { HorseIndicatorLabels, IndicatorLabel, INSUFFICIENT_LABEL } from "@/app/lib/indicatorLabels"
+import type { HorsePredictionRank } from "@/app/lib/horseIndicators"
 
 type EntryWithMasters = Entry & {
   HorseMaster: { name: string }
@@ -15,6 +16,7 @@ type Props = {
   entries: EntryWithMasters[]
   predicts: Predict[]
   indicators?: HorseIndicatorLabels[]
+  openAiPredictionRanks?: HorsePredictionRank[]
 }
 
 const sortByHorseNumber = (a: EntryWithMasters, b: EntryWithMasters) => {
@@ -59,7 +61,12 @@ function IndicatorBadges({ labels }: { labels?: HorseIndicatorLabels }) {
   )
 }
 
-export function EntryTable({ entries, predicts, indicators = [] }: Props) {
+export function EntryTable({
+  entries,
+  predicts,
+  indicators = [],
+  openAiPredictionRanks = [],
+}: Props) {
   // 枠番でグループ化し、各グループ内で馬番順にソート
   const groupedEntries = Object.entries(groupBy(entries, "bracket_number"))
     .map(([bracketNumber, entriesInBracket]) => ({
@@ -74,6 +81,12 @@ export function EntryTable({ entries, predicts, indicators = [] }: Props) {
     [...predicts]
       .sort((a, b) => b.score - a.score)
       .map((predict, index) => [predict.horse_number, marks[index] ?? "×"])
+  )
+  const openAiPredictMarks = new Map(
+    openAiPredictionRanks.map((prediction) => [
+      prediction.horseNumber,
+      marks[prediction.rank - 1] ?? "×",
+    ])
   )
   // 指標が1件も無いレースでは列そのものを表示しない
   const hasIndicators = indicators.length > 0
@@ -95,7 +108,8 @@ export function EntryTable({ entries, predicts, indicators = [] }: Props) {
               <TableHead>馬齢</TableHead>
               <TableHead>騎手</TableHead>
               <TableHead>負担重量</TableHead>
-              <TableHead>予想印</TableHead>
+              <TableHead>予想印（独自予想）</TableHead>
+              {openAiPredictionRanks.length > 0 && <TableHead>予想印（OpenAI）</TableHead>}
               {hasIndicators && <TableHead className="min-w-[240px]">AI指標</TableHead>}
             </TableRow>
           </TableHeader>
@@ -116,6 +130,9 @@ export function EntryTable({ entries, predicts, indicators = [] }: Props) {
                     <TableCell className="whitespace-nowrap">{entry.JockeyMaster?.name ?? "不明"}</TableCell>
                     <TableCell>{entry.jockey_weight}</TableCell>
                     <TableCell>{predictMarks.get(entry.horse_number) ?? "×"}</TableCell>
+                    {openAiPredictionRanks.length > 0 && (
+                      <TableCell>{openAiPredictMarks.get(entry.horse_number) ?? "×"}</TableCell>
+                    )}
                     {hasIndicators && (
                       <TableCell className="min-w-[240px]">
                         <IndicatorBadges labels={indicatorMap.get(entry.horse_number)} />
