@@ -31,6 +31,7 @@ function uniqueNumbers(bets: RecommendedBetDisplay[]): string {
 
 interface Props {
   entries: EntryWithHorse[]
+  isSettled?: boolean
   sections: Array<{
     title: string
     bets: RecommendedBetDisplay[]
@@ -43,6 +44,7 @@ type SectionProps = {
   bets: RecommendedBetDisplay[]
   horseNameMap: Map<number, string>
   emptyMessage?: string
+  isSettled: boolean
 }
 
 function RecommendedBetSection({
@@ -50,6 +52,7 @@ function RecommendedBetSection({
   bets,
   horseNameMap,
   emptyMessage = "レコメンド馬券はまだ登録されていません",
+  isSettled,
 }: SectionProps) {
   if (bets.length === 0) {
     return (
@@ -167,11 +170,19 @@ function RecommendedBetSection({
           </div>
         </div>
       )}
+      {isSettled && hitDetails.length === 0 && (
+        <div className="mt-6 border-t pt-4 text-center">
+          <p className="font-medium text-gray-700">的中馬券はありません</p>
+          <p className="mt-2 text-lg font-bold text-red-600">
+            収支: -{totalAmount.toLocaleString()}円
+          </p>
+        </div>
+      )}
     </section>
   )
 }
 
-export function RecommendedBets({ entries, sections }: Props) {
+export function RecommendedBets({ entries, sections, isSettled = false }: Props) {
   const horseNameMap = new Map(
     entries.map(entry => [
       entry.horse_number,
@@ -193,6 +204,7 @@ export function RecommendedBets({ entries, sections }: Props) {
               bets={section.bets}
               horseNameMap={horseNameMap}
               emptyMessage={section.emptyMessage}
+              isSettled={isSettled}
             />
           ))}
         </div>

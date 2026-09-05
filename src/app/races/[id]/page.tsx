@@ -162,6 +162,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
       </Suspense>
       <RecommendedBets
         entries={race.entries}
+        isSettled={race.payouts.length > 0}
         sections={[
           {
             title: "独自予想",
