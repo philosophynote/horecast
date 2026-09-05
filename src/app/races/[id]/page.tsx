@@ -13,6 +13,10 @@ import { formatInTimeZone } from "date-fns-tz"
 import { prisma } from "@/lib/prisma"
 import { getHorseIndicatorLabelsByRaceId } from "@/app/lib/horseIndicators"
 import { Suspense } from "react"
+import {
+  applyPayoutsToRecommendedBets,
+  buildRecommendedBetsFromRanks,
+} from "@/app/lib/predictionRecommendations"
 
 function getCombinedAccentClass(courseType: string, track: string): string {
   const courseAccent = getCourseAccentClass(courseType)
@@ -120,7 +124,11 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
   if (!race) {
     return <div>レースが見つかりません</div>
   }
-  const { indicators } = indicatorResult
+  const { indicators, predictionRanks } = indicatorResult
+  const openAiRecommendedBets = applyPayoutsToRecommendedBets(
+    buildRecommendedBetsFromRanks(predictionRanks),
+    race.payouts
+  )
   const raceTime = race.race_time ? new Date(race.race_time) : null
   const formattedDate = raceTime
     ? formatInTimeZone(raceTime, 'UTC', 'yyyy年M月d日')
@@ -143,11 +151,30 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
           </div>
         </CardContent>
       </Card>
-      <EntryTable entries={race.entries} predicts={race.predicts} indicators={indicators} />
+      <EntryTable
+        entries={race.entries}
+        predicts={race.predicts}
+        indicators={indicators}
+        openAiPredictionRanks={predictionRanks}
+      />
       <Suspense fallback={<RacePredictionCommentsSkeleton />}>
         <RacePredictionComments netkeibaRaceId={race.netkeiba_race_id} />
       </Suspense>
-      <RecommendedBets bets={race.recommended_bets} entries={race.entries} />
+      <RecommendedBets
+        entries={race.entries}
+        isSettled={race.payouts.length > 0}
+        sections={[
+          {
+            title: "独自予想",
+            bets: race.recommended_bets,
+          },
+          {
+            title: "OpenAI",
+            bets: openAiRecommendedBets,
+            emptyMessage: "OpenAIの予想データはまだ登録されていません",
+          },
+        ]}
+      />
       <div className="mt-6 flex flex-col lg:flex-row gap-6">
         {race.results && race.results.length > 0 && (
           <div className="flex-1">

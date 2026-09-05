@@ -1,4 +1,9 @@
-import { RecommendedBet, Payout } from '@prisma/client'
+import type { RecommendedBet, Payout } from '@prisma/client'
+
+export type RecommendedBetForStatistics = Pick<
+  RecommendedBet,
+  'bet_type' | 'numbers' | 'bet'
+>
 
 export interface BetStatistics {
   totalBets: number
@@ -21,23 +26,40 @@ export interface BetTypeStatistics {
 }
 
 export interface BetResult {
-  recommendedBet: RecommendedBet
+  recommendedBet: RecommendedBetForStatistics
   isHit: boolean
   actualPayout: number
+}
+
+const UNORDERED_BET_TYPES = new Set(['枠連', '馬連', 'ワイド', '3連複'])
+
+function normalizedNumbers(betType: string, numbers: string): string {
+  if (!UNORDERED_BET_TYPES.has(betType)) {
+    return numbers.trim()
+  }
+
+  const values = numbers
+    .split(/[-,]/)
+    .map(value => Number.parseInt(value.trim(), 10))
+
+  return values.every(Number.isFinite)
+    ? values.sort((a, b) => a - b).join('-')
+    : numbers.trim()
 }
 
 /**
  * 推奨ベットと公式ペイアウトをマッチングして的中判定を行う
  */
 export function matchBetsWithPayouts(
-  recommendedBets: RecommendedBet[],
+  recommendedBets: RecommendedBetForStatistics[],
   payouts: Payout[]
 ): BetResult[] {
   return recommendedBets.map(bet => {
     // 同じbet_typeで同じnumbersの組み合わせを探す
     const matchingPayout = payouts.find(payout => 
       payout.bet_type === bet.bet_type && 
-      payout.numbers === bet.numbers
+      normalizedNumbers(payout.bet_type, payout.numbers) ===
+        normalizedNumbers(bet.bet_type, bet.numbers)
     )
     
     const isHit = !!matchingPayout
