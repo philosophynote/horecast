@@ -12,9 +12,8 @@ import { format } from "date-fns"
 import { formatInTimeZone } from "date-fns-tz"
 
 export default function Home() {
-  const [races, setRaces] = useState<Race[]>([])
   const [selectedDate, setSelectedDate] = useState<string>("")
-  const [loading, setLoading] = useState(true)
+  const [racesResult, setRacesResult] = useState<{ date: string; races: Race[] } | null>(null)
   const [activeTab, setActiveTab] = useState<'races' | 'statistics'>('races')
 
   useEffect(() => {
@@ -47,28 +46,31 @@ export default function Home() {
     init()
   }, [])
 
-  const fetchRaces = async (date: string) => {
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/races?date=${date}`, { cache: 'no-store' })
-      if (!res.ok) {
-        throw new Error('Failed to fetch races')
-      }
-      const racesData = await res.json()
-      setRaces(racesData)
-    } catch (error) {
-      console.error('Error fetching races:', error)
-      setRaces([])
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    if (selectedDate) {
-      // TODO: fetch 中の loading 表示を保ったまま同期 setState を無くす形へ移行する
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      fetchRaces(selectedDate)
+    if (!selectedDate) {
+      return
+    }
+    let cancelled = false
+    const fetchRaces = async (date: string) => {
+      try {
+        const res = await fetch(`/api/races?date=${date}`, { cache: 'no-store' })
+        if (!res.ok) {
+          throw new Error('Failed to fetch races')
+        }
+        const racesData: Race[] = await res.json()
+        if (!cancelled) {
+          setRacesResult({ date, races: racesData })
+        }
+      } catch (error) {
+        console.error('Error fetching races:', error)
+        if (!cancelled) {
+          setRacesResult({ date, races: [] })
+        }
+      }
+    }
+    fetchRaces(selectedDate)
+    return () => {
+      cancelled = true
     }
   }, [selectedDate])
 
@@ -97,6 +99,11 @@ export default function Home() {
   const handleDateChange = (date: string) => {
     setSelectedDate(date)
   }
+
+  // 取得済みの結果が選択中の日付のものでない間はローディング表示にする
+  const loadedRaces = racesResult?.date === selectedDate ? racesResult.races : null
+  const loading = loadedRaces === null
+  const races = loadedRaces ?? []
 
   const groupedRaces = groupBy(races, (race) => {
     if (race.race_time) {

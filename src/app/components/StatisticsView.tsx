@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card'
 import { format } from 'date-fns'
 import type { BetStatistics } from '@/app/lib/statistics'
@@ -27,46 +27,60 @@ interface ModelStatistics {
   }>
 }
 
+interface DateRange {
+  startDate: string
+  endDate: string
+}
+
+interface StatisticsResult {
+  range: DateRange
+  data: StatisticsData | null
+}
+
 const MODEL_TABS: Array<{ value: StatisticsModel; label: string }> = [
   { value: 'original', label: '独自予想モデル' },
   { value: 'openai', label: 'OpenAIモデル' }
 ]
 
 export function StatisticsView() {
-  const [data, setData] = useState<StatisticsData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [result, setResult] = useState<StatisticsResult | null>(null)
   const [activeModel, setActiveModel] = useState<StatisticsModel>('original')
-  const [dateRange, setDateRange] = useState(() => ({
+  const [dateRange, setDateRange] = useState<DateRange>(() => ({
     startDate: format(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
     endDate: format(new Date(), 'yyyy-MM-dd')
   }))
 
-  const fetchStatistics = useCallback(async () => {
-    setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        startDate: dateRange.startDate,
-        endDate: dateRange.endDate
-      })
-      const response = await fetch(`/api/statistics?${params}`)
-      if (response.ok) {
-        const statsData = await response.json()
-        setData(statsData)
-      } else {
-        console.error('Failed to fetch statistics')
+  useEffect(() => {
+    let cancelled = false
+    const fetchStatistics = async () => {
+      try {
+        const params = new URLSearchParams({
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate
+        })
+        const response = await fetch(`/api/statistics?${params}`)
+        if (!response.ok) {
+          throw new Error('Failed to fetch statistics')
+        }
+        const statsData: StatisticsData = await response.json()
+        if (!cancelled) {
+          setResult({ range: dateRange, data: statsData })
+        }
+      } catch (error) {
+        console.error('Error fetching statistics:', error)
+        if (!cancelled) {
+          setResult({ range: dateRange, data: null })
+        }
       }
-    } catch (error) {
-      console.error('Error fetching statistics:', error)
-    } finally {
-      setLoading(false)
+    }
+    fetchStatistics()
+    return () => {
+      cancelled = true
     }
   }, [dateRange])
 
-  useEffect(() => {
-    // TODO: fetch 中の loading 表示を保ったまま同期 setState を無くす形へ移行する
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchStatistics()
-  }, [fetchStatistics])
+  // 期間切り替え直後は前の期間の結果しかないのでローディング表示にする
+  const currentResult = result?.range === dateRange ? result : null
 
   const formatCurrency = (amount: number) => {
     return `¥${amount.toLocaleString()}`
@@ -76,7 +90,7 @@ export function StatisticsView() {
     return `${rate.toFixed(1)}%`
   }
 
-  if (loading) {
+  if (!currentResult) {
     return (
       <div className="text-center py-8">
         <p className="text-lg">統計情報を読み込み中...</p>
@@ -84,7 +98,7 @@ export function StatisticsView() {
     )
   }
 
-  if (!data) {
+  if (!currentResult.data) {
     return (
       <div className="text-center py-8">
         <p className="text-lg">統計情報の取得に失敗しました</p>
@@ -92,7 +106,7 @@ export function StatisticsView() {
     )
   }
 
-  const modelData = data.models[activeModel]
+  const modelData = currentResult.data.models[activeModel]
   const { overallStatistics } = modelData
 
   return (
