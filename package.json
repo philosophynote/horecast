@@ -7,7 +7,8 @@
     "build": "prisma generate  && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test src/app/lib/*.test.ts"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@next/third-parties": "^16.3.2",
@@ -37,7 +38,7 @@
     "postcss": "^8.5.26",
     "prisma": "^7.9.1",
     "tailwindcss": "^4.3.3",
-    "tsx": "^4.23.12",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.0"
   }
 }

@@ -12,6 +12,7 @@
 - `npm install`: install dependencies.
 - `npm run dev`: start local development server with Turbopack (`http://localhost:3000`).
 - `npm run lint`: run ESLint directly (`eslint .`) with `eslint-config-next` (`core-web-vitals` + TypeScript rules). Next 16 removed `next lint`.
+- `npm test`: run the Vitest suite once (`vitest run`); `npm run test:watch` keeps it in watch mode.
 - `npm run build`: run `prisma generate`, apply deploy migrations, then build Next.js.
 - `npm run start`: run the production build locally.
 
@@ -23,10 +24,11 @@
 - Match surrounding style in edited files; keep comments short and focused on intent.
 
 ## Testing Guidelines
-- There is currently no dedicated automated test suite in this repository.
-- For every change, run `npm run lint` first for fast feedback.
+- Vitest is the test runner; configuration lives in `vitest.config.mts` (node environment, `@/*` alias).
+- Place tests next to the code under test with `*.test.ts(x)` naming under `src/`.
+- For every change, run `npm run lint` and `npm test` for fast feedback.
+- `.github/workflows/test.yml` runs lint and tests on pushes to `main` and on pull requests.
 - Validate key flows manually: top page, `/races/[id]`, and related API responses.
-- If adding non-trivial logic, add tests with `*.test.ts(x)` naming and document the run command in `package.json`.
 
 ## Commit & Pull Request Guidelines
 - Keep commits small and focused; use concise summaries (Japanese or English).

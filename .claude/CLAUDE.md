@@ -16,6 +16,10 @@ npm start
 
 # リンティング
 npm run lint
+
+# テスト（Vitest）
+npm test        # 1回だけ実行
+npm run test:watch  # ウォッチモード
 ```
 
 ## 環境設定
@@ -89,7 +93,9 @@ npm run lint
 
 - TypeScriptパスエイリアス: `@/*` は `./src/*` にマップ
 - Next.jsとTypeScriptルールでESLint設定済み
-- 変更後は`npm run lint`を実行してコード品質を確保
+- 変更後は`npm run lint`と`npm test`を実行してコード品質を確保
+- テストはVitest。設定は`vitest.config.mts`、テストは対象コードの隣に`*.test.ts(x)`で置く
+- CI（`.github/workflows/test.yml`）がmainへのpushとPRでlintとテストを実行
 - データベーススキーマ変更にはPrismaマイグレーションが必要
 - 全レースデータは外部ソース（netkeiba ID参照）から取得
 
