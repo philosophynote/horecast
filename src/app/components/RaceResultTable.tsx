@@ -24,6 +24,7 @@ export function RaceResultTable({ results }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[50px]">着順</TableHead>
+              <TableHead className="w-[50px]">馬番</TableHead>
               <TableHead className="w-[150px]">馬名</TableHead>
               <TableHead className="w-[50px]">人気</TableHead>
               <TableHead className="w-[50px]">オッズ</TableHead>
@@ -33,6 +34,7 @@ export function RaceResultTable({ results }: Props) {
             {results.map((result) => (
               <TableRow key={result.id}>
                 <TableCell>{result.rank}</TableCell>
+                <TableCell>{result.horse_number}</TableCell>
                 <TableCell>{result.horse_name}</TableCell>
                 <TableCell>{result.favorite || "-"}</TableCell>
                 <TableCell>{result.odds?.toFixed(1) || "-"}</TableCell>
