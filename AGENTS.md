@@ -38,9 +38,10 @@ npm start            # 本番ビルドをローカルで起動
 ### データベースとORM
 
 - PostgreSQL（Supabase）を **Prisma ORM** 経由で利用
-- 主なモデル: `Race`, `Entry`, `HorseMaster`, `JockeyMaster`, `Predict`, `HorseIndicator`, `RacePredictionComment`, `Result`, `Payout`, `RecommendedBet`
+- 主なモデル: `Race`, `Entry`, `HorseMaster`, `JockeyMaster`, `Predict`, `HorseIndicator`, `HorseTimeIndex`, `RacePredictionComment`, `Result`, `Payout`, `RecommendedBet`
 - 全モデルが自動採番のIDとタイムスタンプを持つ
 - レースにはAI予想（`Predict` / `HorseIndicator`）と推奨馬券（`RecommendedBet`）が紐づく
+- `HorseTimeIndex` はpredictorが生成する走破タイム指数。`Race` にない過去レースも持つため外部キーはなく、`netkeiba_race_id` で結合する
 - レースデータは外部ソース（netkeibaのID）を参照して取り込む
 
 ### APIルート
