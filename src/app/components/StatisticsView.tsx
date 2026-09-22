@@ -32,6 +32,8 @@ interface DateRange {
   endDate: string
 }
 
+// 取得済みデータと、そのデータを取得したときの期間をセットで保持する
+// 現在の期間と一致しなければ「更新中」と判定できるので、同期的な setState が不要になる
 interface StatisticsResult {
   range: DateRange
   data: StatisticsData | null
@@ -42,6 +44,19 @@ const MODEL_TABS: Array<{ value: StatisticsModel; label: string }> = [
   { value: 'openai', label: 'OpenAIモデル' }
 ]
 
+// 日付入力中の途中の値（空文字や不完全な日付）で API を叩かないための待ち時間
+const FETCH_DEBOUNCE_MS = 300
+
+const isSameRange = (a: DateRange, b: DateRange) =>
+  a.startDate === b.startDate && a.endDate === b.endDate
+
+const isValidRange = (range: DateRange) =>
+  range.startDate !== '' && range.endDate !== '' && range.startDate <= range.endDate
+
+const formatCurrency = (amount: number) => `¥${amount.toLocaleString()}`
+
+const formatPercentage = (rate: number) => `${rate.toFixed(1)}%`
+
 export function StatisticsView() {
   const [result, setResult] = useState<StatisticsResult | null>(null)
   const [activeModel, setActiveModel] = useState<StatisticsModel>('original')
@@ -51,63 +66,38 @@ export function StatisticsView() {
   }))
 
   useEffect(() => {
-    let cancelled = false
-    const fetchStatistics = async () => {
+    if (!isValidRange(dateRange)) return
+
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
       try {
         const params = new URLSearchParams({
           startDate: dateRange.startDate,
           endDate: dateRange.endDate
         })
-        const response = await fetch(`/api/statistics?${params}`)
+        const response = await fetch(`/api/statistics?${params}`, { signal: controller.signal })
         if (!response.ok) {
-          throw new Error('Failed to fetch statistics')
+          throw new Error(`Failed to fetch statistics: ${response.status}`)
         }
         const statsData: StatisticsData = await response.json()
-        if (!cancelled) {
-          setResult({ range: dateRange, data: statsData })
-        }
+        setResult({ range: dateRange, data: statsData })
       } catch (error) {
+        // 期間変更で古いリクエストを中断した場合は失敗扱いにしない
+        if (controller.signal.aborted) return
         console.error('Error fetching statistics:', error)
-        if (!cancelled) {
-          setResult({ range: dateRange, data: null })
-        }
+        setResult({ range: dateRange, data: null })
       }
-    }
-    fetchStatistics()
+    }, FETCH_DEBOUNCE_MS)
+
     return () => {
-      cancelled = true
+      clearTimeout(timer)
+      controller.abort()
     }
   }, [dateRange])
 
-  // 期間切り替え直後は前の期間の結果しかないのでローディング表示にする
-  const currentResult = result?.range === dateRange ? result : null
-
-  const formatCurrency = (amount: number) => {
-    return `¥${amount.toLocaleString()}`
-  }
-
-  const formatPercentage = (rate: number) => {
-    return `${rate.toFixed(1)}%`
-  }
-
-  if (!currentResult) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-lg">統計情報を読み込み中...</p>
-      </div>
-    )
-  }
-
-  if (!currentResult.data) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-lg">統計情報の取得に失敗しました</p>
-      </div>
-    )
-  }
-
-  const modelData = currentResult.data.models[activeModel]
-  const { overallStatistics } = modelData
+  const rangeValid = isValidRange(dateRange)
+  const isUpdating = rangeValid && (result === null || !isSameRange(result.range, dateRange))
+  const data = result?.data ?? null
 
   return (
     <div className="space-y-6">
@@ -119,22 +109,35 @@ export function StatisticsView() {
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">開始日</label>
+              <label className="block text-sm font-medium mb-1" htmlFor="statistics-start-date">開始日</label>
               <input
+                id="statistics-start-date"
                 type="date"
                 value={dateRange.startDate}
+                max={dateRange.endDate || undefined}
                 onChange={(e) => setDateRange(prev => ({ ...prev, startDate: e.target.value }))}
                 className="border rounded px-3 py-2"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">終了日</label>
+              <label className="block text-sm font-medium mb-1" htmlFor="statistics-end-date">終了日</label>
               <input
+                id="statistics-end-date"
                 type="date"
                 value={dateRange.endDate}
+                min={dateRange.startDate || undefined}
                 onChange={(e) => setDateRange(prev => ({ ...prev, endDate: e.target.value }))}
                 className="border rounded px-3 py-2"
               />
+            </div>
+            <div className="flex items-end">
+              <p className="text-sm text-gray-500 min-h-[1.25rem]" role="status" aria-live="polite">
+                {!rangeValid
+                  ? '開始日と終了日を正しく指定してください'
+                  : isUpdating
+                    ? '統計情報を更新中...'
+                    : ''}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -161,6 +164,32 @@ export function StatisticsView() {
         </nav>
       </div>
 
+      {/* 統計本体: 期間変更時はここだけ差し替わる。取得中は直前の結果を薄く表示したままにする */}
+      <div
+        aria-busy={isUpdating}
+        className={`space-y-6 transition-opacity ${isUpdating ? 'opacity-50 pointer-events-none' : ''}`}
+      >
+        {data ? (
+          <ModelStatisticsPanel modelData={data.models[activeModel]} />
+        ) : result === null ? (
+          <div className="text-center py-8">
+            <p className="text-lg">統計情報を読み込み中...</p>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-lg">統計情報の取得に失敗しました</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function ModelStatisticsPanel({ modelData }: { modelData: ModelStatistics }) {
+  const { overallStatistics } = modelData
+
+  return (
+    <>
       {/* 全体統計 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -293,6 +322,6 @@ export function StatisticsView() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </>
   )
 }
