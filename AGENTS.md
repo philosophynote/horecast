@@ -57,6 +57,7 @@ npm start            # 本番ビルドをローカルで起動
 
 - **トップページ**（`/`）— クライアントコンポーネント。日付を選んでレース一覧を競馬場ごとに表示し、統計タブも持つ
 - **レース詳細**（`/races/[id]`）— サーバーコンポーネント。出馬表とAI予想、推奨馬券、レース結果、配当、前後レースへのナビゲーションを表示
+- **タイム指数**（`/time-index`）— サーバーコンポーネント。`HorseTimeIndex` を絞り込み（競馬場・芝ダート・距離・クラス・馬場・期間・信頼度）付きで一覧・分布・馬ごとの推移として表示する。絞り込みはGETフォームでURLのクエリに持ち、期間未指定なら最新開催日から1週間を既定にして全件走査を避ける。`Race` に存在する行だけレース詳細へリンクする
 
 ### 主要コンポーネント
 
@@ -67,6 +68,7 @@ npm start            # 本番ビルドをローカルで起動
 - `PayoutTable` — 払戻情報
 - `RacePredictionComments` — AI予想のコメントと警告
 - `StatisticsView` — モデル別の成績統計
+- `TimeIndexFilterForm` / `TimeIndexTable` / `TimeIndexDistribution` / `TimeIndexHorseTrend` — タイム指数ダッシュボードの絞り込み・一覧・分布（SVGヒストグラム）・馬ごとの推移（SVG折れ線）。純粋なヘルパーは `src/app/lib/timeIndexFilters.ts`、DBアクセスは `src/app/lib/timeIndex.ts`
 - `DateSelector` — カレンダーによる開催日選択
 - `NavigationButtons` — 前後レースへの移動
 
