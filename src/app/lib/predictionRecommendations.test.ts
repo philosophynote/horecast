@@ -1,5 +1,4 @@
-import assert from "node:assert/strict"
-import test from "node:test"
+import { expect, test } from "vitest"
 import {
   applyPayoutsToRecommendedBets,
   buildRecommendedBetsFromRanks,
@@ -14,16 +13,20 @@ test("順位上位4頭から複勝とワイドBOXを作る", () => {
     { horseNumber: 1, rank: 5 },
   ])
 
-  assert.deepEqual(bets.slice(0, 4), [
+  expect(bets.slice(0, 4)).toEqual([
     { bet_type: "複勝", numbers: "2", payout: 0, bet: 400 },
     { bet_type: "複勝", numbers: "5", payout: 0, bet: 300 },
     { bet_type: "複勝", numbers: "8", payout: 0, bet: 200 },
     { bet_type: "複勝", numbers: "12", payout: 0, bet: 100 },
   ])
-  assert.deepEqual(
-    bets.slice(4).map((bet) => bet.numbers),
-    ["2-5", "2-8", "2-12", "5-8", "5-12", "8-12"]
-  )
+  expect(bets.slice(4).map((bet) => bet.numbers)).toEqual([
+    "2-5",
+    "2-8",
+    "2-12",
+    "5-8",
+    "5-12",
+    "8-12",
+  ])
 })
 
 test("4頭未満でも存在する順位だけで馬券を作る", () => {
@@ -32,7 +35,7 @@ test("4頭未満でも存在する順位だけで馬券を作る", () => {
     { horseNumber: 3, rank: 1 },
   ])
 
-  assert.deepEqual(bets, [
+  expect(bets).toEqual([
     { bet_type: "複勝", numbers: "3", payout: 0, bet: 400 },
     { bet_type: "複勝", numbers: "7", payout: 0, bet: 300 },
     { bet_type: "ワイド", numbers: "3-7", payout: 0, bet: 100 },
@@ -65,8 +68,5 @@ test("公式配当から購入額に応じたOpenAI馬券の払戻額を計算�
     },
   ])
 
-  assert.deepEqual(
-    paidBets.map((bet) => bet.payout),
-    [720, 0, 520]
-  )
+  expect(paidBets.map((bet) => bet.payout)).toEqual([720, 0, 520])
 })
