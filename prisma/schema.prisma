@@ -108,27 +108,28 @@ model RacePredictionComment {
 /// horecast-predictor の事前バッチが保存する馬ごとの raw 指標。
 /// スコアはレース内相対値のため、レース間の比較には使用しない。
 model HorseIndicator {
-  id               Int       @id @default(autoincrement())
-  netkeiba_race_id String    @db.VarChar
-  horse_number     Int       @db.SmallInt
-  horse_id         String?   @db.VarChar
-  horse_name       String?
-  base_ability     Float?
-  condition_fit    Float?
-  pace_fit         Float?
-  freshness        Json?     @db.JsonB
-  history_count    Int       @default(0)
-  rank             Int?
-  positive_factors Json      @default("[]") @db.JsonB
-  risks            Json      @default("[]") @db.JsonB
-  warnings         Json      @default("[]") @db.JsonB
-  expected_pace    String?   @db.VarChar
-  logic_version    String?   @db.VarChar
-  is_partial       Boolean   @default(false)
-  generated_at     DateTime? @db.Timestamptz(6)
-  created_at       DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
-  Race             Race      @relation(fields: [netkeiba_race_id], references: [netkeiba_race_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_horse_indicator_netkeiba_race_id")
+  id                Int       @id @default(autoincrement())
+  netkeiba_race_id  String    @db.VarChar
+  horse_number      Int       @db.SmallInt
+  horse_id          String?   @db.VarChar
+  horse_name        String?
+  base_ability      Float?
+  condition_fit     Float?
+  pace_fit          Float?
+  freshness         Json?     @db.JsonB
+  history_count     Int       @default(0)
+  rank              Int?
+  positive_factors  Json      @default("[]") @db.JsonB
+  risks             Json      @default("[]") @db.JsonB
+  warnings          Json      @default("[]") @db.JsonB
+  expected_pace     String?   @db.VarChar
+  logic_version     String?   @db.VarChar
+  is_partial        Boolean   @default(false)
+  time_index_recent Json      @default("[]") @db.JsonB
+  generated_at      DateTime? @db.Timestamptz(6)
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+  Race              Race      @relation(fields: [netkeiba_race_id], references: [netkeiba_race_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_horse_indicator_netkeiba_race_id")
 
   @@unique([netkeiba_race_id, horse_number], map: "horse_indicator_race_horse_number_key")
 }
@@ -175,4 +176,35 @@ model RecommendedBet {
   Race       Race     @relation(fields: [race_id], references: [id])
 
   @@index([race_id])
+}
+
+/// horecast-predictor が生成するHorecastタイム指数。JRA平地競走の1頭1走を1行にする。
+/// Race に存在しない過去レースも保存するため netkeiba_race_id に外部キーは張らない。
+/// baseline_version が異なる指数（補正版など）は同じ表に別行として並べる。
+model HorseTimeIndex {
+  id                      Int      @id @default(autoincrement())
+  netkeiba_race_id        String   @db.VarChar
+  horse_number            Int      @db.SmallInt
+  horse_name              String
+  race_date               DateTime @db.Date
+  racecourse              String   @db.VarChar
+  surface                 String   @db.VarChar
+  distance                Int
+  class_name              String   @db.VarChar
+  going                   String   @db.VarChar
+  time_seconds            Decimal? @db.Decimal(6, 1)
+  baseline_seconds        Decimal? @db.Decimal(7, 2)
+  baseline_sample_size    Int      @default(0)
+  baseline_confidence     String   @db.VarChar
+  baseline_version        String   @db.VarChar
+  horecast_time_index_raw Decimal? @db.Decimal(7, 1)
+  unavailable_reason      String?  @db.VarChar
+  generated_at            DateTime @default(now()) @db.Timestamptz(6)
+  created_at              DateTime @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([netkeiba_race_id, horse_number, baseline_version], map: "horse_time_index_race_horse_version_key")
+  @@index([race_date])
+  @@index([racecourse])
+  @@index([netkeiba_race_id])
 }
