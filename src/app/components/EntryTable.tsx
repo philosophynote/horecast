@@ -4,7 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/ca
 import { Badge } from "@/app/components/ui/badge"
 import { Entry, Predict } from "@prisma/client"
 import { groupBy } from "lodash"
-import { HorseIndicatorLabels, IndicatorLabel, INSUFFICIENT_LABEL } from "@/app/lib/indicatorLabels"
+import {
+  HorseIndicatorLabels,
+  IndicatorLabel,
+  INSUFFICIENT_LABEL,
+  RecentTimeIndex,
+  TimeIndexConfidence,
+} from "@/app/lib/indicatorLabels"
 import type { HorsePredictionRank } from "@/app/lib/horseIndicators"
 
 type EntryWithMasters = Entry & {
@@ -42,6 +48,64 @@ function IndicatorBadge({ name, indicator }: { name: string; indicator: Indicato
   )
 }
 
+/** 信頼度が低い指数は色を落として注意を促す */
+const TIME_INDEX_CLASSES: Record<TimeIndexConfidence, string> = {
+  high: "bg-gray-50 text-gray-700 border-gray-200",
+  medium: "bg-gray-50 text-gray-700 border-gray-200",
+  low: "bg-gray-50 text-gray-400 border-gray-200",
+}
+
+/** 指数は小数1桁で保存されるが、出馬表では整数で十分読める */
+const formatTimeIndex = (timeIndex: number) => String(Math.round(timeIndex))
+
+const formatConfidence = (item: RecentTimeIndex) => `（信頼度 ${item.confidenceLabel}）`
+
+/**
+ * 地力の補足として直近1走のタイム指数を表示し、複数走あれば展開して最大5走を並べる。
+ * サーバーコンポーネントのまま動かすため、開閉はネイティブの details/summary に任せる。
+ */
+function RecentTimeIndexBadge({ recentTimeIndexes }: { recentTimeIndexes: RecentTimeIndex[] }) {
+  const [latest, ...older] = recentTimeIndexes
+  if (!latest) {
+    return null
+  }
+
+  const summaryText = `前走 ${formatTimeIndex(latest.timeIndex)}${formatConfidence(latest)}`
+  const badgeClass = `whitespace-nowrap font-medium ${TIME_INDEX_CLASSES[latest.confidence]}`
+
+  if (older.length === 0) {
+    return (
+      <Badge variant="outline" className={badgeClass}>
+        {summaryText}
+      </Badge>
+    )
+  }
+
+  return (
+    <details>
+      <summary
+        className="cursor-pointer list-none [&::-webkit-details-marker]:hidden"
+        title="直近走の指数を表示"
+      >
+        <Badge variant="outline" className={`${badgeClass} cursor-pointer`}>
+          {summaryText} ▾
+        </Badge>
+      </summary>
+      <ul className="mt-1 space-y-0.5 text-xs">
+        {recentTimeIndexes.map((item, index) => (
+          <li
+            key={`${item.netkeibaRaceId}-${item.raceDate}-${index}`}
+            className={`whitespace-nowrap ${item.confidence === "low" ? "text-gray-400" : "text-gray-700"}`}
+          >
+            {item.raceDate} {item.racecourse} {formatTimeIndex(item.timeIndex)}
+            {formatConfidence(item)}
+          </li>
+        ))}
+      </ul>
+    </details>
+  )
+}
+
 function IndicatorBadges({ labels }: { labels?: HorseIndicatorLabels }) {
   if (!labels || labels.isInsufficient) {
     return (
@@ -51,9 +115,11 @@ function IndicatorBadges({ labels }: { labels?: HorseIndicatorLabels }) {
     )
   }
 
+  // 直近指数を展開しても隣のバッジが伸びないよう上揃えにする
   return (
-    <div className="flex flex-wrap gap-1">
+    <div className="flex flex-wrap items-start gap-1">
       <IndicatorBadge name="地力" indicator={labels.ability} />
+      <RecentTimeIndexBadge recentTimeIndexes={labels.recentTimeIndexes} />
       <IndicatorBadge name="条件適性" indicator={labels.conditionFit} />
       <IndicatorBadge name="展開適性" indicator={labels.paceFit} />
       <IndicatorBadge name="近走状態" indicator={labels.freshness} />
