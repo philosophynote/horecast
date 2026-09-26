@@ -1,4 +1,6 @@
-import { Prisma } from "@prisma/client"
+import type { Prisma } from "@prisma/client"
+// 生成済みクライアント（prisma generate）に依存せずテストできるよう、SQLタグはランタイムから直接読む
+import { join, sqltag, type Sql } from "@prisma/client/runtime/client"
 import { formatInTimeZone } from "date-fns-tz"
 
 // タイム指数ダッシュボードの純粋なヘルパー。DBアクセスは timeIndex.ts に置く。
@@ -211,18 +213,18 @@ export function buildTimeIndexWhereSql(
   filter: TimeIndexFilter,
   period: Period,
   version: string | null
-): Prisma.Sql {
-  const conditions: Prisma.Sql[] = [Prisma.sql`"horecast_time_index_raw" IS NOT NULL`]
-  if (period.startDate) conditions.push(Prisma.sql`"race_date" >= ${dateAtUtc(period.startDate)}::date`)
-  if (period.endDate) conditions.push(Prisma.sql`"race_date" <= ${dateAtUtc(period.endDate)}::date`)
-  if (filter.racecourse) conditions.push(Prisma.sql`"racecourse" = ${filter.racecourse}`)
-  if (filter.surface) conditions.push(Prisma.sql`"surface" = ${filter.surface}`)
-  if (filter.distance) conditions.push(Prisma.sql`"distance" = ${filter.distance}`)
-  if (filter.className) conditions.push(Prisma.sql`"class_name" = ${filter.className}`)
-  if (filter.going) conditions.push(Prisma.sql`"going" = ${filter.going}`)
-  if (filter.confidence) conditions.push(Prisma.sql`"baseline_confidence" = ${filter.confidence}`)
-  if (version) conditions.push(Prisma.sql`"baseline_version" = ${version}`)
-  return Prisma.join(conditions, " AND ")
+): Sql {
+  const conditions: Sql[] = [sqltag`"horecast_time_index_raw" IS NOT NULL`]
+  if (period.startDate) conditions.push(sqltag`"race_date" >= ${dateAtUtc(period.startDate)}::date`)
+  if (period.endDate) conditions.push(sqltag`"race_date" <= ${dateAtUtc(period.endDate)}::date`)
+  if (filter.racecourse) conditions.push(sqltag`"racecourse" = ${filter.racecourse}`)
+  if (filter.surface) conditions.push(sqltag`"surface" = ${filter.surface}`)
+  if (filter.distance) conditions.push(sqltag`"distance" = ${filter.distance}`)
+  if (filter.className) conditions.push(sqltag`"class_name" = ${filter.className}`)
+  if (filter.going) conditions.push(sqltag`"going" = ${filter.going}`)
+  if (filter.confidence) conditions.push(sqltag`"baseline_confidence" = ${filter.confidence}`)
+  if (version) conditions.push(sqltag`"baseline_version" = ${version}`)
+  return join(conditions, " AND ")
 }
 
 /**
