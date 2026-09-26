@@ -86,6 +86,7 @@ async function getHorseIndicatorLabelsByWhere(
         pace_fit: true,
         freshness: true,
         history_count: true,
+        time_index_recent: true,
         rank: true,
         logic_version: true,
         generated_at: true,
