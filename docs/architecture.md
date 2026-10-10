@@ -240,6 +240,16 @@ npx prisma generate
 
 本番環境では `npm run build` に含まれる `prisma migrate deploy` が自動実行される。
 
+predictor（service_role）が書き込むテーブルを新設するときは、マイグレーションSQLに GRANT を含める。
+`HorseTimeIndex` では GRANT が無く、predictor からの初回投入が `42501 permission denied` になった。
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public."NewTable" TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE public."NewTable_id_seq" TO service_role;
+```
+
+RLS は有効にし、anon・authenticated 向けのポリシーは作らない（Horecast は Server Component から Prisma 経由で読む）。
+
 ---
 
 ## 依存関係管理
