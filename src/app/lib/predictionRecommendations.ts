@@ -1,7 +1,6 @@
 import type { RecommendedBetDisplay } from "@/app/components/RecommendedBets"
-import type { HorsePredictionRank } from "@/app/lib/horseIndicators"
-import type { Payout } from "@prisma/client"
-import { matchBetsWithPayouts } from "@/app/lib/statistics"
+import type { HorsePredictionRank } from "@/app/lib/horsePredictionRanks"
+import { matchBetsWithPayouts, type PayoutForStatistics } from "@/app/lib/statistics"
 
 const PLACE_BET_AMOUNTS = [400, 300, 200, 100]
 
@@ -40,7 +39,7 @@ export function buildRecommendedBetsFromRanks(
 /** 100円あたりの公式配当を、各レコメンド馬券の購入額に応じた払戻額へ変換する。 */
 export function applyPayoutsToRecommendedBets(
   bets: RecommendedBetDisplay[],
-  payouts: Payout[]
+  payouts: PayoutForStatistics[]
 ): RecommendedBetDisplay[] {
   return matchBetsWithPayouts(bets, payouts).map((result) => ({
     ...result.recommendedBet,

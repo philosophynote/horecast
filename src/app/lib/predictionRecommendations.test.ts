@@ -1,4 +1,5 @@
 import { expect, test } from "vitest"
+import type { Payout } from "@prisma/client"
 import {
   applyPayoutsToRecommendedBets,
   buildRecommendedBetsFromRanks,
@@ -47,7 +48,7 @@ test("公式配当から購入額に応じたOpenAI馬券の払戻額を計算�
     { horseNumber: 7, rank: 1 },
     { horseNumber: 3, rank: 2 },
   ])
-  const paidBets = applyPayoutsToRecommendedBets(bets, [
+  const payouts: Payout[] = [
     {
       id: 1,
       race_id: 10,
@@ -66,7 +67,8 @@ test("公式配当から購入額に応じたOpenAI馬券の払戻額を計算�
       created_at: new Date(),
       updated_at: new Date(),
     },
-  ])
+  ]
+  const paidBets = applyPayoutsToRecommendedBets(bets, payouts)
 
   expect(paidBets.map((bet) => bet.payout)).toEqual([720, 0, 520])
 })
