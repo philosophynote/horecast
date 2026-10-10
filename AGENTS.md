@@ -57,20 +57,16 @@ npm start            # 本番ビルドをローカルで起動
 ### ページ構成
 
 - **トップページ**（`/`）— クライアントコンポーネント。開催日を横並びボタンで選び、本日のサマリー・AIピックアップ（両モデルの本命が一致した発走前のレース）・競馬場ごとのレース行（◎と的中／払戻／次に発走などの状態）を表示する。統計は `/statistics` へ
-- **レース詳細**（`/races/[id]`）— サーバーコンポーネント。出馬表とAI予想、推奨馬券、レース結果、配当、前後レースへのナビゲーションを表示
+- **レース詳細**（`/races/[id]`）— サーバーコンポーネント。レース情報（想定ペース・状態・前後レース）、AIの結論（独自予想とOpenAIの印の比較と本命一致）、出馬表とAI指標（5段目盛り・直近5走のタイム指数）、AI予想コメント、推奨馬券（モデル切替）、確定後は結果と払戻を表示する。id が不正・該当なしは `notFound()`（`loading.tsx` があるためストリーミングになり、HTTP は 200 で `noindex` が付く）
 - **タイム指数**（`/time-index`）— サーバーコンポーネント。`HorseTimeIndex` を絞り込み（競馬場・芝ダート・距離・クラス・馬場・期間・信頼度）付きで一覧・分布・馬ごとの推移として表示する。絞り込みはGETフォームでURLのクエリに持ち、期間未指定なら最新開催日から1週間を既定にして全件走査を避ける。`Race` に存在する行だけレース詳細へリンクする
 
 ### 主要コンポーネント
 
-- `EntryTable` — 出馬表（馬・騎手・AI予想スコア）
+- `RaceHeader` / `RaceNavigation` / `AiVerdict` / `EntryTable` / `TimeIndexSparkline` / `RacePredictionCommentCard` / `RecommendedBets` / `RaceResultTable` / `PayoutTable` — レース詳細の見出し・前後レース・AIの結論・出馬表（指標は `IndicatorMeter`、タイム指数は小さな折れ線）・AIコメントのカード・推奨馬券（`'use client'`、表示用に整えたデータだけ受け取る）・結果・払戻。印・結論・スパークライン・結果と払戻の並び・馬券のまとめは `src/app/lib/raceDetail.ts`
 - `RaceDateTabs` / `RaceDaySummaryCards` / `AiPickupList` / `TrackRaceList` / `RaceRow` — トップページの開催日ボタン・サマリー・ピックアップ・競馬場列・レース行。状態判定や日付の扱いは `src/app/lib/raceList.ts`
-- `RecommendedBets` — AIが生成した推奨馬券
-- `RaceResultTable` — レース結果とオッズ
-- `PayoutTable` — 払戻情報
-- `RacePredictionComments` — AI予想のコメントと警告
+- `RacePredictionComments` — AIコメントの取得（async、Suspense で後から流す）。表示は `RacePredictionCommentCard`
 - `StatisticsView` — モデル別の成績統計
 - `TimeIndexFilterForm` / `TimeIndexTable` / `TimeIndexDistribution` / `TimeIndexHorseTrend` — タイム指数ダッシュボードの絞り込み・一覧・分布（SVGヒストグラム）・馬ごとの推移（SVG折れ線）。純粋なヘルパーは `src/app/lib/timeIndexFilters.ts`、DBアクセスは `src/app/lib/timeIndex.ts`
-- `NavigationButtons` — 前後レースへの移動
 
 ### データ取得の方針
 

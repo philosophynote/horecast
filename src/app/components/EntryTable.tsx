@@ -1,216 +1,164 @@
-import React from "react"
+import type { Entry, Predict, Result } from "@prisma/client"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
-import { Badge } from "@/app/components/ui/badge"
-import { Entry, Predict } from "@prisma/client"
-import { groupBy } from "lodash"
-import {
-  HorseIndicatorLabels,
-  IndicatorLabel,
-  INSUFFICIENT_LABEL,
-  RecentTimeIndex,
-  TimeIndexConfidence,
-} from "@/app/lib/indicatorLabels"
-import type { HorsePredictionRank } from "@/app/lib/horseIndicators"
+import { type HorseIndicatorLabels, INSUFFICIENT_LABEL } from "@/app/lib/indicatorLabels"
+import type { HorsePredictionRank } from "@/app/lib/horsePredictionRanks"
+import { frameColorClass } from "@/app/lib/frameColors"
+import { buildOpenAiMarks, buildOriginalMarks, sortResults } from "@/app/lib/raceDetail"
+import { FrameNumber } from "./FrameNumber"
+import { IndicatorMeter } from "./IndicatorMeter"
+import { TimeIndexSparkline } from "./TimeIndexSparkline"
 
-type EntryWithMasters = Entry & {
-  HorseMaster: { name: string }
-  JockeyMaster: { name: string }
+type EntryWithMasters = Pick<Entry, "id" | "horse_number" | "bracket_number" | "sex" | "age" | "jockey_weight"> & {
+  HorseMaster: { name: string } | null
+  JockeyMaster: { name: string } | null
 }
 
 type Props = {
   entries: EntryWithMasters[]
-  predicts: Predict[]
+  predicts: Pick<Predict, "horse_number" | "score">[]
   indicators?: HorseIndicatorLabels[]
   openAiPredictionRanks?: HorsePredictionRank[]
+  /** 確定後の着順。渡したときだけ「着」列に値が入る */
+  results?: Pick<Result, "rank" | "horse_number">[]
 }
 
-const sortByHorseNumber = (a: EntryWithMasters, b: EntryWithMasters) => {
-  return a.horse_number - b.horse_number
+const INDICATOR_COLUMNS = ["地力", "条件適性", "展開適性", "近走状態"] as const
+
+function Mark({ mark }: { mark: string | undefined }) {
+  if (!mark) return <span className="text-border">·</span>
+  return <span className={mark === "◎" ? "text-primary" : "text-foreground"}>{mark}</span>
 }
 
-/** 上位ほど暖色、下位ほど寒色。判断材料不足は無彩色 */
-const LEVEL_CLASSES = [
-  "bg-red-50 text-red-700 border-red-200",
-  "bg-orange-50 text-orange-700 border-orange-200",
-  "bg-gray-50 text-gray-700 border-gray-200",
-  "bg-sky-50 text-sky-700 border-sky-200",
-  "bg-slate-100 text-slate-500 border-slate-200",
-]
-const INSUFFICIENT_CLASS = "bg-gray-100 text-gray-500 border-dashed border-gray-300"
-
-function IndicatorBadge({ name, indicator }: { name: string; indicator: IndicatorLabel }) {
-  const toneClass = indicator.level === null ? INSUFFICIENT_CLASS : LEVEL_CLASSES[indicator.level]
-  return (
-    <Badge variant="outline" className={`whitespace-nowrap font-medium ${toneClass}`}>
-      {name}：{indicator.label}
-    </Badge>
-  )
+function finishClass(rank: string): string {
+  const value = Number.parseInt(rank, 10)
+  return !Number.isNaN(value) && value <= 3 ? "text-primary" : "text-muted-foreground"
 }
 
-/** 信頼度が低い指数は色を落として注意を促す */
-const TIME_INDEX_CLASSES: Record<TimeIndexConfidence, string> = {
-  high: "bg-gray-50 text-gray-700 border-gray-200",
-  medium: "bg-gray-50 text-gray-700 border-gray-200",
-  low: "bg-gray-50 text-gray-400 border-gray-200",
-}
-
-/** 指数は小数1桁で保存されるが、出馬表では整数で十分読める */
-const formatTimeIndex = (timeIndex: number) => String(Math.round(timeIndex))
-
-const formatConfidence = (item: RecentTimeIndex) => `（信頼度 ${item.confidenceLabel}）`
-
-/**
- * 地力の補足として直近1走のタイム指数を表示し、複数走あれば展開して最大5走を並べる。
- * サーバーコンポーネントのまま動かすため、開閉はネイティブの details/summary に任せる。
- */
-function RecentTimeIndexBadge({ recentTimeIndexes }: { recentTimeIndexes: RecentTimeIndex[] }) {
-  const [latest, ...older] = recentTimeIndexes
-  if (!latest) {
-    return null
-  }
-
-  const summaryText = `前走 ${formatTimeIndex(latest.timeIndex)}${formatConfidence(latest)}`
-  const badgeClass = `whitespace-nowrap font-medium ${TIME_INDEX_CLASSES[latest.confidence]}`
-
-  if (older.length === 0) {
-    return (
-      <Badge variant="outline" className={badgeClass}>
-        {summaryText}
-      </Badge>
-    )
-  }
-
-  return (
-    <details>
-      <summary
-        className="cursor-pointer list-none [&::-webkit-details-marker]:hidden"
-        title="直近走の指数を表示"
-      >
-        <Badge variant="outline" className={`${badgeClass} cursor-pointer`}>
-          {summaryText} ▾
-        </Badge>
-      </summary>
-      <ul className="mt-1 space-y-0.5 text-xs">
-        {recentTimeIndexes.map((item, index) => (
-          <li
-            key={`${item.netkeibaRaceId}-${item.raceDate}-${index}`}
-            className={`whitespace-nowrap ${item.confidence === "low" ? "text-gray-400" : "text-gray-700"}`}
-          >
-            {item.raceDate} {item.racecourse} {formatTimeIndex(item.timeIndex)}
-            {formatConfidence(item)}
-          </li>
-        ))}
-      </ul>
-    </details>
-  )
-}
-
-function IndicatorBadges({ labels }: { labels?: HorseIndicatorLabels }) {
-  if (!labels || labels.isInsufficient) {
-    return (
-      <Badge variant="outline" className={`whitespace-nowrap font-medium ${INSUFFICIENT_CLASS}`}>
-        {INSUFFICIENT_LABEL}
-      </Badge>
-    )
-  }
-
-  // 直近指数を展開しても隣のバッジが伸びないよう上揃えにする
-  return (
-    <div className="flex flex-wrap items-start gap-1">
-      <IndicatorBadge name="地力" indicator={labels.ability} />
-      <RecentTimeIndexBadge recentTimeIndexes={labels.recentTimeIndexes} />
-      <IndicatorBadge name="条件適性" indicator={labels.conditionFit} />
-      <IndicatorBadge name="展開適性" indicator={labels.paceFit} />
-      <IndicatorBadge name="近走状態" indicator={labels.freshness} />
-    </div>
-  )
-}
-
-export function EntryTable({
-  entries,
-  predicts,
-  indicators = [],
-  openAiPredictionRanks = [],
-}: Props) {
-  // 枠番でグループ化し、各グループ内で馬番順にソート
-  const groupedEntries = Object.entries(groupBy(entries, "bracket_number"))
-    .map(([bracketNumber, entriesInBracket]) => ({
-      bracketNumber: Number.parseInt(bracketNumber),
-      entries: [...entriesInBracket].sort(sortByHorseNumber),
-    }))
-    .sort((a, b) => a.bracketNumber - b.bracketNumber)
-
+/** 出馬表とAI指標 */
+export function EntryTable({ entries, predicts, indicators = [], openAiPredictionRanks = [], results }: Props) {
+  const rows = [...entries].sort((a, b) => a.horse_number - b.horse_number)
   const indicatorMap = new Map(indicators.map((indicator) => [indicator.horseNumber, indicator]))
-  const marks = ["◎", "○", "▲", "△", "×"]
-  const predictMarks = new Map(
-    [...predicts]
-      .sort((a, b) => b.score - a.score)
-      .map((predict, index) => [predict.horse_number, marks[index] ?? "×"])
-  )
-  const openAiPredictMarks = new Map(
-    openAiPredictionRanks.map((prediction) => [
-      prediction.horseNumber,
-      marks[prediction.rank - 1] ?? "×",
-    ])
-  )
-  // 指標が1件も無いレースでは列そのものを表示しない
-  const hasIndicators = indicators.length > 0
+  const originalMarks = buildOriginalMarks(predicts)
+  const openAiMarks = buildOpenAiMarks(openAiPredictionRanks)
+  const finishByHorse = new Map(results ? sortResults(results).map((result) => [result.horse_number, result.rank]) : [])
+  const showIndicators = indicators.length > 0
+  const showFinish = results !== undefined && results.length > 0
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>出馬表</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {/* 指標列が増える分、狭い画面ではテーブルを潰さず横スクロールさせる */}
-        <Table className={hasIndicators ? "min-w-[760px]" : undefined}>
+    <section aria-labelledby="entries-title" className="rounded-xl border border-border bg-card">
+      <div className="flex flex-wrap items-baseline justify-between gap-3 px-5 pb-1.5 pt-4">
+        <h2 id="entries-title" className="text-xl font-bold">
+          出馬表とAI指標
+        </h2>
+        {showIndicators && (
+          <div className="flex flex-wrap items-center gap-3.5 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="flex gap-[3px]" aria-hidden="true">
+                <span className="h-1.5 w-2.5 rounded-[1px] bg-primary" />
+                <span className="h-1.5 w-2.5 rounded-[1px] bg-primary" />
+                <span className="h-1.5 w-2.5 rounded-[1px] bg-primary" />
+                <span className="h-1.5 w-2.5 rounded-[1px] bg-border" />
+                <span className="h-1.5 w-2.5 rounded-[1px] bg-border" />
+              </span>
+              目盛りはレース内の相対評価
+            </span>
+            <span>指数は100が同条件の標準的な勝ち時計</span>
+          </div>
+        )}
+      </div>
+      <div className="overflow-x-auto px-2.5 pb-3">
+        <Table className={showIndicators ? "min-w-[1100px]" : "min-w-[640px]"}>
           <TableHeader>
-            <TableRow>
-              <TableHead className="align-middle text-center">枠番</TableHead>
-              <TableHead>馬番</TableHead>
-              <TableHead>馬名</TableHead>
-              <TableHead>性別</TableHead>
-              <TableHead>馬齢</TableHead>
-              <TableHead>騎手</TableHead>
-              <TableHead>負担重量</TableHead>
-              <TableHead>予想印（独自予想）</TableHead>
-              {openAiPredictionRanks.length > 0 && <TableHead>予想印（OpenAI）</TableHead>}
-              {hasIndicators && <TableHead className="min-w-[240px]">AI指標</TableHead>}
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-10">着</TableHead>
+              <TableHead className="w-8">枠</TableHead>
+              <TableHead className="w-14">馬番</TableHead>
+              <TableHead className="w-14 text-center">独自</TableHead>
+              <TableHead className="w-16 text-center">OpenAI</TableHead>
+              <TableHead className="min-w-[170px]">馬名</TableHead>
+              <TableHead className="min-w-[120px]">騎手 · 斤量</TableHead>
+              {showIndicators &&
+                INDICATOR_COLUMNS.map((name) => (
+                  <TableHead key={name} className="min-w-[120px]">
+                    {name}
+                  </TableHead>
+                ))}
+              {showIndicators && <TableHead className="min-w-[170px]">タイム指数（直近5走）</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {groupedEntries.map(({ bracketNumber, entries }) => (
-              <React.Fragment key={bracketNumber}>
-                {entries.map((entry, index) => (
-                  <TableRow key={entry.id}>
-                    {index === 0 && (
-                      <TableCell rowSpan={entries.length} className="align-middle text-center">
-                        {bracketNumber}
+            {rows.map((entry) => {
+              const original = originalMarks.get(entry.horse_number)
+              const openAi = openAiMarks.get(entry.horse_number)
+              const labels = indicatorMap.get(entry.horse_number)
+              const insufficient = !labels || labels.isInsufficient
+              const highlighted = original === "◎" || openAi === "◎"
+              const finish = finishByHorse.get(entry.horse_number)
+              return (
+                <TableRow key={entry.id} className={highlighted ? "bg-accent hover:bg-accent" : undefined}>
+                  <TableCell className={`numeric text-base font-semibold ${finish ? finishClass(finish) : "text-muted-foreground"}`}>
+                    {showFinish ? (finish ?? "—") : ""}
+                  </TableCell>
+                  <TableCell>
+                    <span
+                      aria-label={`${entry.bracket_number}枠`}
+                      className={`block h-[30px] w-2.5 rounded-sm ${frameColorClass(entry.bracket_number)}`}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <FrameNumber bracketNumber={entry.bracket_number}>{entry.horse_number}</FrameNumber>
+                  </TableCell>
+                  <TableCell className="text-center text-xl">
+                    <Mark mark={original} />
+                  </TableCell>
+                  <TableCell className="text-center text-xl">
+                    <Mark mark={openAi} />
+                  </TableCell>
+                  <TableCell className="min-w-0">
+                    <span className="block truncate text-[15px] font-bold">{entry.HorseMaster?.name ?? "不明"}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {entry.sex}
+                      {entry.age}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="block">{entry.JockeyMaster?.name ?? "不明"}</span>
+                    <span className="numeric block text-xs text-muted-foreground">{entry.jockey_weight}kg</span>
+                  </TableCell>
+                  {showIndicators &&
+                    (insufficient ? (
+                      <TableCell colSpan={INDICATOR_COLUMNS.length}>
+                        <span className="inline-block rounded-md border border-dashed border-muted-foreground px-3 py-1 text-xs text-muted-foreground">
+                          {INSUFFICIENT_LABEL} · 国内の出走履歴がありません
+                        </span>
                       </TableCell>
-                    )}
-                    <TableCell>{entry.horse_number}</TableCell>
-                    <TableCell className="whitespace-nowrap">{entry.HorseMaster?.name ?? "不明"}</TableCell>
-                    <TableCell>{entry.sex}</TableCell>
-                    <TableCell>{entry.age}</TableCell>
-                    <TableCell className="whitespace-nowrap">{entry.JockeyMaster?.name ?? "不明"}</TableCell>
-                    <TableCell>{entry.jockey_weight}</TableCell>
-                    <TableCell>{predictMarks.get(entry.horse_number) ?? "×"}</TableCell>
-                    {openAiPredictionRanks.length > 0 && (
-                      <TableCell>{openAiPredictMarks.get(entry.horse_number) ?? "×"}</TableCell>
-                    )}
-                    {hasIndicators && (
-                      <TableCell className="min-w-[240px]">
-                        <IndicatorBadges labels={indicatorMap.get(entry.horse_number)} />
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
-              </React.Fragment>
-            ))}
+                    ) : (
+                      <>
+                        <TableCell>
+                          <IndicatorMeter name="地力" indicator={labels.ability} />
+                        </TableCell>
+                        <TableCell>
+                          <IndicatorMeter name="条件適性" indicator={labels.conditionFit} />
+                        </TableCell>
+                        <TableCell>
+                          <IndicatorMeter name="展開適性" indicator={labels.paceFit} />
+                        </TableCell>
+                        <TableCell>
+                          <IndicatorMeter name="近走状態" indicator={labels.freshness} levelCount={4} />
+                        </TableCell>
+                      </>
+                    ))}
+                  {showIndicators && (
+                    <TableCell>
+                      <TimeIndexSparkline recentTimeIndexes={labels?.recentTimeIndexes ?? []} />
+                    </TableCell>
+                  )}
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
