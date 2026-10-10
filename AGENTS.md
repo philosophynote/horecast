@@ -47,7 +47,7 @@ npm start            # 本番ビルドをローカルで起動
 
 ### APIルート
 
-- `/api/races` — 日付でレースを取得（未指定なら直近のレース開催日）
+- `/api/races` — 日付（`date=yyyy-MM-dd`、未指定なら直近の開催日）のレース一覧を `{ date, summary, races }` で返す。各レースに独自予想とOpenAIの◎、確定済みか、推奨馬券の投資・払戻・的中を含み、`summary` はその日の生成済み・確定済み件数と独自予想の回収率・収支。関連は1回の `findMany` でまとめて取る（純粋な変換は `src/app/lib/raceList.ts`）
 - `/api/races/[id]` — 関連データを含む単一レースの取得
 - `/api/races/[id]/navigation` — 前後レースのID取得
 - `/api/races/dates` — 開催日一覧の取得
@@ -56,21 +56,20 @@ npm start            # 本番ビルドをローカルで起動
 
 ### ページ構成
 
-- **トップページ**（`/`）— クライアントコンポーネント。日付を選んでレース一覧を競馬場ごとに表示し、統計タブも持つ
+- **トップページ**（`/`）— クライアントコンポーネント。開催日を横並びボタンで選び、本日のサマリー・AIピックアップ（両モデルの本命が一致した発走前のレース）・競馬場ごとのレース行（◎と的中／払戻／次に発走などの状態）を表示する。統計は `/statistics` へ
 - **レース詳細**（`/races/[id]`）— サーバーコンポーネント。出馬表とAI予想、推奨馬券、レース結果、配当、前後レースへのナビゲーションを表示
 - **タイム指数**（`/time-index`）— サーバーコンポーネント。`HorseTimeIndex` を絞り込み（競馬場・芝ダート・距離・クラス・馬場・期間・信頼度）付きで一覧・分布・馬ごとの推移として表示する。絞り込みはGETフォームでURLのクエリに持ち、期間未指定なら最新開催日から1週間を既定にして全件走査を避ける。`Race` に存在する行だけレース詳細へリンクする
 
 ### 主要コンポーネント
 
 - `EntryTable` — 出馬表（馬・騎手・AI予想スコア）
-- `RaceCard` — トップページのレース概要カード
+- `RaceDateTabs` / `RaceDaySummaryCards` / `AiPickupList` / `TrackRaceList` / `RaceRow` — トップページの開催日ボタン・サマリー・ピックアップ・競馬場列・レース行。状態判定や日付の扱いは `src/app/lib/raceList.ts`
 - `RecommendedBets` — AIが生成した推奨馬券
 - `RaceResultTable` — レース結果とオッズ
 - `PayoutTable` — 払戻情報
 - `RacePredictionComments` — AI予想のコメントと警告
 - `StatisticsView` — モデル別の成績統計
 - `TimeIndexFilterForm` / `TimeIndexTable` / `TimeIndexDistribution` / `TimeIndexHorseTrend` — タイム指数ダッシュボードの絞り込み・一覧・分布（SVGヒストグラム）・馬ごとの推移（SVG折れ線）。純粋なヘルパーは `src/app/lib/timeIndexFilters.ts`、DBアクセスは `src/app/lib/timeIndex.ts`
-- `DateSelector` — カレンダーによる開催日選択
 - `NavigationButtons` — 前後レースへの移動
 
 ### データ取得の方針
@@ -91,7 +90,7 @@ npm start            # 本番ビルドをローカルで起動
 ### 日時の扱い
 
 - 日付整形は `date-fns` と `date-fns-tz` を使う
-- レース時刻はUTCで保存し、表示時にローカルタイムゾーンへ変換する
+- `race_time` は JST の壁時計を UTC として保存している（09:50 JST → `09:50Z`、`timestamp(6)`）。表示は `formatInTimeZone(..., 'UTC', ...)` で整形し、現在時刻と比べるときは `nowAsStoredClock`（+9時間）で同じ規約へ寄せる。`timestamptz` の列（`generated_at` など）だけ `'Asia/Tokyo'` で整形する
 - レースの絞り込みとナビゲーションは日付を基準にする
 
 ## コーディング規約

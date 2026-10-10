@@ -5,6 +5,9 @@ export type RecommendedBetForStatistics = Pick<
   'bet_type' | 'numbers' | 'bet'
 >
 
+/** 的中判定に必要な列だけ。select で絞った行も渡せるようにする */
+export type PayoutForStatistics = Pick<Payout, 'bet_type' | 'numbers' | 'payout'>
+
 export interface BetStatistics {
   totalBets: number
   totalAmount: number
@@ -52,7 +55,7 @@ function normalizedNumbers(betType: string, numbers: string): string {
  */
 export function matchBetsWithPayouts(
   recommendedBets: RecommendedBetForStatistics[],
-  payouts: Payout[]
+  payouts: PayoutForStatistics[]
 ): BetResult[] {
   return recommendedBets.map(bet => {
     // 同じbet_typeで同じnumbersの組み合わせを探す

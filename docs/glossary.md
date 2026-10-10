@@ -157,7 +157,7 @@ Horecastプロジェクト内で使用される用語の定義を管理します
 
 **定義**: クライアントサイド（ブラウザ）で動作するReactコンポーネント。ファイル先頭に `'use client'` ディレクティブを記述。
 
-**本プロジェクトでの用途**: `LlmPredictSection`（LLM予想の非同期fetch）, `DateSelector`（状態管理）など。
+**本プロジェクトでの用途**: `LlmPredictSection`（LLM予想の非同期fetch）, `RaceDateTabs`（開催日の選択）など。
 
 **関連用語**: Server Component
 
