@@ -1,4 +1,4 @@
-import type { RecommendedBetDisplay } from "@/app/components/RecommendedBets"
+import type { RecommendedBetDisplay } from "@/app/lib/raceDetail"
 import type { HorsePredictionRank } from "@/app/lib/horsePredictionRanks"
 import { matchBetsWithPayouts, type PayoutForStatistics } from "@/app/lib/statistics"
 

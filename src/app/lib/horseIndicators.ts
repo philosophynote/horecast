@@ -14,6 +14,8 @@ export type HorseIndicatorLabelsResult = {
   predictionRanks: HorsePredictionRank[]
   /** 表示対象とした生成バージョン */
   logicVersion: string | null
+  /** 想定ペース（ハイ / ミドル / スロー / データ不足）。predictor はレース単位の値を全馬の行に持つ */
+  expectedPace: string | null
 }
 
 export type {
@@ -26,6 +28,7 @@ const EMPTY_RESULT: HorseIndicatorLabelsResult = {
   indicators: [],
   predictionRanks: [],
   logicVersion: null,
+  expectedPace: null,
 }
 
 /**
@@ -46,6 +49,7 @@ async function getHorseIndicatorLabelsByWhere(
         freshness: true,
         history_count: true,
         time_index_recent: true,
+        expected_pace: true,
         rank: true,
         logic_version: true,
         generated_at: true,
@@ -53,6 +57,11 @@ async function getHorseIndicatorLabelsByWhere(
       },
     })
     const targets = pickLatestLogicVersion(indicators)
+    // findMany の順序に依存しないよう馬番順で最初の非 null を取る
+    const expectedPace =
+      [...targets]
+        .sort((a, b) => a.horse_number - b.horse_number)
+        .find((indicator) => indicator.expected_pace)?.expected_pace ?? null
 
     return {
       indicators: targets
@@ -60,6 +69,7 @@ async function getHorseIndicatorLabelsByWhere(
         .sort((a, b) => a.horseNumber - b.horseNumber),
       predictionRanks: toHorsePredictionRanks(targets),
       logicVersion: targets[0]?.logic_version ?? null,
+      expectedPace,
     }
   } catch (error) {
     console.error("Failed to fetch horse indicators", error)

@@ -305,7 +305,7 @@ Horecast UI
 
 **定義**: 既存のAI予想スコアを管理するPrismaモデル。LLM予想（LlmPredict）とは別の機能。
 
-**説明**: `score` フィールドによる数値スコアで馬を評価し、EntryTableで◎○▲△×のマークとして表示される。
+**説明**: `score` フィールドによる数値スコアで馬を評価し、EntryTableで上位4頭に◎○▲△のマークとして表示される（印の決定は `src/app/lib/raceDetail.ts`）。
 
 **関連用語**: LlmPredict（新機能）, ランクマーク
 

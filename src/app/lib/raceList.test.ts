@@ -8,6 +8,7 @@ import {
   formatCourseTypeCounts,
   formatRaceClock,
   formatRaceDateHeading,
+  formatRaceDateMonthDay,
   isPickupRace,
   nowAsStoredClock,
   parseRaceDateParam,
@@ -229,6 +230,7 @@ describe("日付のパラメータと範囲", () => {
   test("整形", () => {
     expect(weekdayOf("2026-10-10")).toBe("土")
     expect(formatRaceDateHeading("2026-10-10")).toBe("2026年10月10日（土）")
+    expect(formatRaceDateMonthDay("2026-10-10")).toBe("10月10日（土）")
     expect(formatRaceClock("2026-10-10T09:50:00.000Z")).toBe("09:50")
     expect(formatRaceClock(null)).toBe("--:--")
   })

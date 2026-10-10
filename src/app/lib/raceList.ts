@@ -358,6 +358,13 @@ export function formatRaceDateHeading(date: string): string {
   return `${formatInTimeZone(parsed, "UTC", "yyyy年M月d日")}（${weekdayOf(date)}）`
 }
 
+/** パンくず用: 10月10日（土） */
+export function formatRaceDateMonthDay(date: string): string {
+  const parsed = parseRaceDateParam(date)
+  if (!parsed) return date
+  return `${formatInTimeZone(parsed, "UTC", "M月d日")}（${weekdayOf(date)}）`
+}
+
 /** 日付ボタン用: 10/10 */
 export function formatRaceDateShort(date: string): string {
   const parsed = parseRaceDateParam(date)

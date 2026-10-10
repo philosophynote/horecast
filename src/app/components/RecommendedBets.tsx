@@ -1,214 +1,122 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
-import type { RecommendedBet } from "@prisma/client"
-import { groupBy } from "lodash"
+"use client"
 
-type EntryWithHorse = {
-  horse_number: number
-  HorseMaster: {
-    name: string
-  } | null
-}
+import { useState } from "react"
+import type { BetGroup, BetModel, BetSummary } from "@/app/lib/raceDetail"
+import { FrameNumber } from "./FrameNumber"
+import { ReturnRate, SignedYen } from "./SignedValue"
 
-export type RecommendedBetDisplay = Pick<
-  RecommendedBet,
-  "bet_type" | "numbers" | "payout" | "bet"
->
-
-function uniqueNumbers(bets: RecommendedBetDisplay[]): string {
-  const nums = new Set<number>()
-  bets.forEach((b) => {
-    b.numbers
-      .split(/[-,]/)
-      .map((n) => parseInt(n, 10))
-      .forEach((n) => {
-        if (!isNaN(n)) nums.add(n)
-      })
-  })
-  return Array.from(nums)
-    .sort((a, b) => a - b)
-    .join(',')
-}
-
-interface Props {
-  entries: EntryWithHorse[]
-  isSettled?: boolean
-  sections: Array<{
-    title: string
-    bets: RecommendedBetDisplay[]
-    emptyMessage?: string
-  }>
-}
-
-type SectionProps = {
+export type RecommendedBetSection = {
+  key: BetModel
   title: string
-  bets: RecommendedBetDisplay[]
-  horseNameMap: Map<number, string>
+  /** 推奨馬券が無ければ null */
+  summary: BetSummary | null
+  groups: BetGroup[]
   emptyMessage?: string
-  isSettled: boolean
 }
 
-function RecommendedBetSection({
-  title,
-  bets,
-  horseNameMap,
-  emptyMessage = "レコメンド馬券はまだ登録されていません",
-  isSettled,
-}: SectionProps) {
-  if (bets.length === 0) {
-    return (
-      <section className="rounded-lg border border-border bg-muted p-5">
-        <h3 className="mb-4 text-center text-xl font-semibold">{title}</h3>
-        <p className="py-8 text-center text-gray-600">{emptyMessage}</p>
-      </section>
-    )
-  }
+type RecommendedBetsProps = {
+  isSettled: boolean
+  sections: RecommendedBetSection[]
+  /** 馬番 → 枠番 */
+  brackets: { horseNumber: number; bracketNumber: number }[]
+}
 
-  const grouped = groupBy(bets, "bet_type")
-  const totalAmount = bets.reduce((sum, b) => sum + b.bet, 0)
-  const hitDetails = bets
-    .filter((b) => b.payout > 0)
-    .map((b) => ({
-      type: b.bet_type,
-      numbers: b.numbers,
-      investment: b.bet,
-      return: b.payout,
-    }))
-  const hitAmount = hitDetails.reduce((sum, h) => sum + h.return, 0)
-  const balance = hitAmount - totalAmount
+const yen = (amount: number) => `¥${amount.toLocaleString("ja-JP")}`
+
+function Tile({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-muted px-4 py-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="numeric text-[22px] font-semibold leading-tight">{children}</div>
+    </div>
+  )
+}
+
+const Dash = () => <span className="text-muted-foreground">—</span>
+
+/** 推奨馬券。独自予想と OpenAI を切り替えて表示する */
+export function RecommendedBets({ isSettled, sections, brackets }: RecommendedBetsProps) {
+  const [activeKey, setActiveKey] = useState<BetModel>(sections[0]?.key ?? "original")
+  const active = sections.find((section) => section.key === activeKey) ?? sections[0]
+  const bracketOf = new Map(brackets.map((item) => [item.horseNumber, item.bracketNumber]))
 
   return (
-    <section className="rounded-lg border border-border bg-muted p-5">
-      <h3 className="mb-4 text-center text-xl font-semibold">{title}</h3>
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-        {Object.entries(grouped).map(([betType, betGroup]) => {
-            const total = betGroup.reduce((sum, b) => sum + b.bet, 0)
-            const sorted =
-              betType === "複勝"
-                ? [...betGroup].sort((a, b) => b.bet - a.bet)
-                : betGroup
-            if (betType === "ワイド") {
-              const nums = uniqueNumbers(betGroup)
+    <section
+      aria-labelledby="bets-title"
+      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 id="bets-title" className="text-xl font-bold">
+            推奨馬券
+          </h2>
+          <div className="text-[13px] text-muted-foreground">上位4頭の複勝と、ワイドBOX</div>
+        </div>
+        {sections.length > 1 && (
+          <div role="group" aria-label="予想モデル" className="flex rounded-[10px] border border-border bg-background p-[3px]">
+            {sections.map((section) => {
+              const pressed = section.key === active?.key
               return (
-                <div key={betType} className="bg-card p-4 rounded-lg min-h-[180px] flex flex-col border border-border">
-                  <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
-                  <div className="flex flex-col items-center justify-center flex-1">
-                    <p className="text-center mb-3">ボックス: {nums}</p>
-                    <p className="text-sm text-gray-600">各{betGroup[0].bet}円 × {betGroup.length}通り</p>
-                    <p className="mt-2 text-sm text-gray-600 font-semibold">合計: {total}円</p>
-                  </div>
-                </div>
+                <button
+                  key={section.key}
+                  type="button"
+                  aria-pressed={pressed}
+                  onClick={() => setActiveKey(section.key)}
+                  className={`min-h-10 rounded-lg px-4 text-sm font-bold transition-colors ${
+                    pressed ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {section.title}
+                </button>
               )
-            }
-            return (
-              <div key={betType} className="bg-card p-4 rounded-lg min-h-[180px] flex flex-col border border-border">
-                <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
-                <ul className="space-y-2 flex-1">
-                  {sorted.map((bet, index) => {
-                    if (betType === "複勝") {
-                      const horseNumber = parseInt(bet.numbers, 10)
-                      const horseName = horseNameMap.get(horseNumber) || "不明"
-                      return (
-                        <li key={`${bet.bet_type}-${bet.numbers}-${index}`} className="pb-1 last:border-b-0">
-                          {bet.numbers} {horseName} - {bet.bet}円
-                        </li>
-                      )
-                    }
-                    return (
-                      <li key={`${bet.bet_type}-${bet.numbers}-${index}`} className="pb-1 last:border-b-0">
-                        {bet.numbers} - {bet.bet}円
-                      </li>
-                    )
-                  })}
-                </ul>
-                <p className="mt-2 text-sm text-gray-600 font-semibold text-right">
-                  合計: {total}円
-                </p>
-              </div>
-            )
-        })}
-      </div>
-
-      <div className="mt-6 pt-4 border-t text-center">
-        <p className="font-bold text-lg">合計金額: {totalAmount}円</p>
-      </div>
-
-      {hitDetails.length > 0 && (
-        <div className="mt-6 pt-4 border-t">
-          <h3 className="text-lg font-semibold mb-3 text-center">的中結果</h3>
-          <div className="space-y-4">
-              <ul className="space-y-2">
-                {hitDetails.map((hit) => (
-                  <li key={`${hit.type}-${hit.numbers}`} className="flex justify-between items-center pb-1">
-                    <span>
-                      {hit.type} {hit.numbers}
-                    </span>
-                    <span className="font-semibold text-green-600">+{hit.return.toLocaleString()}円</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex justify-between items-center pt-2">
-                <span className="font-bold">投資金額</span>
-                <span>{totalAmount.toLocaleString()}円</span>
-              </div>
-              <div className="flex justify-between items-center pt-2">
-                <span className="font-bold">回収金額</span>
-                <span>{hitAmount.toLocaleString()}円</span>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t">
-                <span className="font-bold">収支</span>
-                <span className={balance >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                  {balance >= 0 ? "+" : ""}
-                  {balance.toLocaleString()}円
-                </span>
-              </div>
-              <div className="flex justify-between items-center pt-2">
-                <span className="font-bold">回収率</span>
-                <span className={balance >= 0 ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                  {totalAmount > 0 ? Math.round((hitAmount / totalAmount) * 100) : 0}%
-                </span>
-              </div>
+            })}
           </div>
-        </div>
-      )}
-      {isSettled && hitDetails.length === 0 && (
-        <div className="mt-6 border-t pt-4 text-center">
-          <p className="font-medium text-gray-700">的中馬券はありません</p>
-          <p className="mt-2 text-lg font-bold text-red-600">
-            収支: -{totalAmount.toLocaleString()}円
-          </p>
-        </div>
+        )}
+      </div>
+
+      {!active || !active.summary ? (
+        <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+          {active?.emptyMessage ?? "推奨馬券はまだ登録されていません"}
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-px overflow-hidden rounded-[10px] border border-border bg-border">
+            <Tile label="投資">{yen(active.summary.investment)}</Tile>
+            <Tile label="払戻">{active.summary.payout === null ? <Dash /> : yen(active.summary.payout)}</Tile>
+            <Tile label="収支">{active.summary.profit === null ? <Dash /> : <SignedYen amount={active.summary.profit} />}</Tile>
+            <Tile label="回収率">
+              {active.summary.returnRate === null ? <Dash /> : <ReturnRate rate={active.summary.returnRate} />}
+            </Tile>
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] gap-4">
+            {active.groups.map((group) => (
+              <div key={group.type}>
+                <div className="mb-1.5 text-[13px] font-bold text-muted-foreground">{group.type}</div>
+                {group.items.map((item, index) => (
+                  <div
+                    key={`${group.type}-${item.numbers.join("-")}-${index}`}
+                    className="grid grid-cols-[minmax(0,1fr)_70px_90px] items-center gap-2 border-t border-border py-2"
+                  >
+                    <div className="flex items-center gap-1">
+                      {item.numbers.map((number) => (
+                        <FrameNumber key={number} bracketNumber={bracketOf.get(number)} className="size-[26px] text-[13px]">
+                          {number}
+                        </FrameNumber>
+                      ))}
+                    </div>
+                    <span className="numeric text-right text-muted-foreground">{yen(item.bet)}</span>
+                    <span
+                      className={`numeric text-right font-semibold ${item.payout > 0 ? "text-positive" : "text-muted-foreground"}`}
+                    >
+                      {!isSettled ? "発走前" : item.payout > 0 ? yen(item.payout) : "—"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </section>
-  )
-}
-
-export function RecommendedBets({ entries, sections, isSettled = false }: Props) {
-  const horseNameMap = new Map(
-    entries.map(entry => [
-      entry.horse_number,
-      entry.HorseMaster?.name ?? "不明"
-    ])
-  )
-
-  return (
-    <Card className="mt-8 bg-card border border-border shadow-xs">
-      <CardHeader>
-        <CardTitle>レコメンド馬券</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {sections.map((section) => (
-            <RecommendedBetSection
-              key={section.title}
-              title={section.title}
-              bets={section.bets}
-              horseNameMap={horseNameMap}
-              emptyMessage={section.emptyMessage}
-              isSettled={isSettled}
-            />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   )
 }
