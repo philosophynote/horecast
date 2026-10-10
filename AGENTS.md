@@ -38,10 +38,11 @@ npm start            # 本番ビルドをローカルで起動
 ### データベースとORM
 
 - PostgreSQL（Supabase）を **Prisma ORM** 経由で利用
-- 主なモデル: `Race`, `Entry`, `HorseMaster`, `JockeyMaster`, `Predict`, `HorseIndicator`, `HorseTimeIndex`, `RacePredictionComment`, `Result`, `Payout`, `RecommendedBet`
+- 主なモデル: `Race`, `Entry`, `HorseMaster`, `JockeyMaster`, `Predict`, `HorseIndicator`, `HorseTimeIndex`, `JockeyRacecourseRecord`, `RacePredictionComment`, `Result`, `Payout`, `RecommendedBet`
 - 全モデルが自動採番のIDとタイムスタンプを持つ
 - レースにはAI予想（`Predict` / `HorseIndicator`）と推奨馬券（`RecommendedBet`）が紐づく
 - `HorseTimeIndex` はpredictorが生成する走破タイム指数。`Race` にない過去レースも持つため外部キーはなく、`netkeiba_race_id` で結合する
+- `JockeyRacecourseRecord` はpredictorが集計する騎手成績（騎手 × 期間 × 競馬場 × 芝ダ × 距離帯）。`racecourse` / `surface` は `Race.track` / `Race.course_type` と同じ表記で、画面はレースの値をそのまま検索キーに使う。率は保存せず `rides` と各着数から計算する
 - レースデータは外部ソース（netkeibaのID）を参照して取り込む
 
 ### APIルート
@@ -110,6 +111,7 @@ npm start            # 本番ビルドをローカルで起動
 - `.github/workflows/test.yml` が `main` へのpushとPRでlintとテストを実行する
 - 主要な画面は手動でも確認する: トップページ、`/races/[id]`、関連するAPIレスポンス
 - データベーススキーマを変更したらPrismaマイグレーションを追加する
+- predictorが書き込む新テーブルを追加するときは、マイグレーションに `service_role` への GRANT（テーブルの SELECT / INSERT / UPDATE / DELETE とシーケンスの USAGE / SELECT）を含める。RLS は有効にし、anon・authenticated 向けポリシーは作らない
 
 ## コミットとPull Request
 
