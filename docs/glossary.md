@@ -327,7 +327,7 @@ Horecast UI
 
 ### EntryTable
 
-**定義**: 出馬表を表示するReactコンポーネント。馬・騎手・既存AI予想スコア（◎○▲△×）を表示。
+**定義**: 出馬表を表示するReactコンポーネント。馬・騎手・既存AI予想スコア（◎○▲△×）に加え、騎手名の下に開催条件（競馬場 × 芝ダ × 距離帯）での勝率・複勝率・騎乗数（`JockeyRacecourseRecord` 由来）を表示。
 
 **ファイルパス**: `src/app/components/EntryTable.tsx`
 
