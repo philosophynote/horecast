@@ -40,7 +40,7 @@ export function HorseSearchForm({ filter }: { filter: TimeIndexFilter }) {
         name={FILTER_PARAM_KEYS.horse}
         defaultValue={filter.horse ?? ""}
         placeholder="馬名（カタカナ）"
-        className="flex-1 border rounded px-3 py-2 text-sm bg-white"
+        className="flex-1 border border-input rounded px-3 py-2 text-sm bg-input-background"
       />
       <Button type="submit">推移を表示</Button>
     </form>

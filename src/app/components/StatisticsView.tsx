@@ -143,7 +143,7 @@ export function StatisticsView() {
         </CardContent>
       </Card>
 
-      <div className="border-b border-gray-200" role="tablist" aria-label="予想モデル">
+      <div className="border-b border-border" role="tablist" aria-label="予想モデル">
         <nav className="flex gap-8">
           {MODEL_TABS.map((tab) => (
             <button

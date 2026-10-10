@@ -113,10 +113,10 @@ export default function Home() {
   })
 
   return (
-    <main className="container mx-auto py-6 px-4 min-h-screen bg-gray-50">
+    <main className="container mx-auto py-6 px-4 min-h-screen bg-background">
       {/* タブナビゲーション */}
       <div className="mb-6">
-        <div className="border-b border-gray-200">
+        <div className="border-b border-border">
           <nav className="flex space-x-8">
             <button
               onClick={() => setActiveTab('races')}
