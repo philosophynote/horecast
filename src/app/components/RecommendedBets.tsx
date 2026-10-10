@@ -56,7 +56,7 @@ function RecommendedBetSection({
 }: SectionProps) {
   if (bets.length === 0) {
     return (
-      <section className="rounded-lg border border-gray-200 bg-gray-50 p-5">
+      <section className="rounded-lg border border-border bg-muted p-5">
         <h3 className="mb-4 text-center text-xl font-semibold">{title}</h3>
         <p className="py-8 text-center text-gray-600">{emptyMessage}</p>
       </section>
@@ -77,7 +77,7 @@ function RecommendedBetSection({
   const balance = hitAmount - totalAmount
 
   return (
-    <section className="rounded-lg border border-gray-200 bg-gray-50 p-5">
+    <section className="rounded-lg border border-border bg-muted p-5">
       <h3 className="mb-4 text-center text-xl font-semibold">{title}</h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         {Object.entries(grouped).map(([betType, betGroup]) => {
@@ -89,7 +89,7 @@ function RecommendedBetSection({
             if (betType === "ワイド") {
               const nums = uniqueNumbers(betGroup)
               return (
-                <div key={betType} className="bg-white p-4 rounded-lg min-h-[180px] flex flex-col border border-gray-200">
+                <div key={betType} className="bg-card p-4 rounded-lg min-h-[180px] flex flex-col border border-border">
                   <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
                   <div className="flex flex-col items-center justify-center flex-1">
                     <p className="text-center mb-3">ボックス: {nums}</p>
@@ -100,7 +100,7 @@ function RecommendedBetSection({
               )
             }
             return (
-              <div key={betType} className="bg-white p-4 rounded-lg min-h-[180px] flex flex-col border border-gray-200">
+              <div key={betType} className="bg-card p-4 rounded-lg min-h-[180px] flex flex-col border border-border">
                 <h3 className="text-lg font-semibold mb-3 text-center">{betType}</h3>
                 <ul className="space-y-2 flex-1">
                   {sorted.map((bet, index) => {
@@ -191,7 +191,7 @@ export function RecommendedBets({ entries, sections, isSettled = false }: Props)
   )
 
   return (
-    <Card className="mt-8 bg-white border border-gray-200 shadow-xs">
+    <Card className="mt-8 bg-card border border-border shadow-xs">
       <CardHeader>
         <CardTitle>レコメンド馬券</CardTitle>
       </CardHeader>

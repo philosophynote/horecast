@@ -140,8 +140,8 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
   // const raceHasFinished = new Date(race.race_time) < now
 
   return (
-    <main className="container mx-auto py-6 min-h-screen bg-gray-50" >
-      <Card className={`mb-6 hover:shadow-lg transition-shadow duration-200 bg-white border border-gray-200 shadow-xs ${getCombinedAccentClass(race.course_type, race.track)}`}>
+    <main className="container mx-auto py-6 min-h-screen bg-background">
+      <Card className={`mb-6 hover:shadow-lg transition-shadow duration-200 bg-card border border-border shadow-xs ${getCombinedAccentClass(race.course_type, race.track)}`}>
         <CardContent className="flex flex-col p-8 space-y-4 items-center">
           <div className="w-fit">
             <h1 className="text-5xl font-extrabold leading-tight tracking-wide">{race.track}{race.number}R {race.name}</h1>

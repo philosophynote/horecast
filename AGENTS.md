@@ -82,10 +82,11 @@ npm start            # 本番ビルドをローカルで起動
 
 ### スタイリングとUI
 
-- **Tailwind CSS** — コース種別（芝／ダート／障害）に応じたグラデーションを使い分ける
-- **shadcn/ui** — UIパターンを揃えるためのコンポーネント
-- **レスポンシブ** — モバイルファースト
-- **日本語テキスト** — Geistフォントで表示
+- **Tailwind CSS v4 + shadcn/ui** — 色はすべて `src/app/globals.css` のテーマ変数（`bg-background` `bg-card` `text-muted-foreground` `border-border` など）で指定し、`bg-white` や `text-gray-500` のような固定色は使わない
+- **ライト／ダーク** — ライトは「ターフ」、ダークは「夜の計測盤」。`next-themes` が `<html>` に `class="dark"` を付け外しし、OS設定に従う＋ヘッダーの切替ボタンで変更できる。shadcn に無い役割は `text-positive`（プラス）`text-negative`（マイナス）`text-slow`（遅い指数）`bg-input-background`（入力欄）で指定する。`text-primary` `text-negative` `text-slow` は `/80` などで薄めない（ライトの `bg-muted` 上で 4.6:1 とぎりぎりのため）
+- **書体** — 本文は IBM Plex Sans JP、数字は IBM Plex Mono。数字には `numeric` ユーティリティ（等幅＋桁揃え）を付け、`tabular-nums` 単独は使わない
+- **共通の小部品**（`src/app/components/`） — `FrameNumber`（枠番の色付き番号）、`IndicatorMeter`（AI指標の5段目盛り）、`CourseTypeMark`（芝・ダート・障害の印。色は印だけで文字には付けない）、`SignedYen` / `ReturnRate`（符号付きの収支・回収率）。純粋なロジックは `src/app/lib/` の `frameColors.ts` `indicatorMeter.ts` `courseType.ts` `signedFormat.ts`
+- **レスポンシブ** — モバイルファースト。広い表は枠内で横スクロールさせる
 
 ### 日時の扱い
 

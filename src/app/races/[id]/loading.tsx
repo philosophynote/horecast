@@ -1,17 +1,17 @@
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card"
 
 function Line({ className }: { className: string }) {
-  return <div className={`rounded bg-gray-200 ${className}`} />
+  return <div className={`rounded bg-muted ${className}`} />
 }
 
 export default function Loading() {
   return (
     <main
-      className="container mx-auto min-h-screen bg-gray-50 py-6"
+      className="container mx-auto min-h-screen bg-background py-6"
       aria-label="レース情報を読み込み中"
     >
       <div className="animate-pulse space-y-6">
-        <Card className="border border-gray-200 bg-white">
+        <Card className="border border-border bg-card">
           <CardContent className="flex flex-col items-center space-y-4 p-8">
             <Line className="h-12 w-3/4 max-w-xl" />
             <Line className="h-5 w-64" />

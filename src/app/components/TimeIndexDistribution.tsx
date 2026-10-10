@@ -98,7 +98,7 @@ function ConfidenceBreakdown({ distribution }: { distribution: Distribution }) {
               <td className="text-right p-2 tabular-nums">{item.count.toLocaleString()}</td>
               <td className="text-right p-2 tabular-nums">{(ratio * 100).toFixed(1)}%</td>
               <td className="p-2">
-                <div className="h-2 w-full rounded bg-gray-100" aria-hidden="true">
+                <div className="h-2 w-full rounded bg-muted" aria-hidden="true">
                   <div
                     className="h-2 rounded bg-blue-500"
                     style={{ width: `${Math.round(ratio * 100)}%` }}

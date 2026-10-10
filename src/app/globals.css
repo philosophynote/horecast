@@ -4,124 +4,158 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+/*
+  テーマ変数は :root（ライト「ターフ」）と .dark（ダーク「夜の計測盤」）で定義し、
+  ここでは Tailwind のユーティリティ名に対応付けるだけにする。
+  `inline` にすることで `bg-background` が `var(--background)` を使用箇所で参照し、
+  .dark 側の上書きが効く。--color-* のカスタムプロパティは出力されないので、
+  CSS から --color-* を var() で直接参照しないこと。
+*/
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
 
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
 
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
 
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
 
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
 
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
 
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-ring: var(--ring);
 
-  --color-chart-1: hsl(var(--chart-1));
-  --color-chart-2: hsl(var(--chart-2));
-  --color-chart-3: hsl(var(--chart-3));
-  --color-chart-4: hsl(var(--chart-4));
-  --color-chart-5: hsl(var(--chart-5));
+  /* shadcn に無い役割 */
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-slow: var(--slow);
+  --color-warning: var(--warning);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* 枠番の8色。両モード共通。文字色は白地・黒地のどちらと組むかで決める */
+  --color-frame-1: #f4f4f0;
+  --color-frame-1-foreground: #111111;
+  --color-frame-2: #2a2a2a;
+  --color-frame-2-foreground: #f4f4f0;
+  --color-frame-3: #d03a31;
+  --color-frame-3-foreground: #ffffff;
+  --color-frame-4: #2f6fd6;
+  --color-frame-4-foreground: #ffffff;
+  --color-frame-5: #e8c930;
+  --color-frame-5-foreground: #111111;
+  --color-frame-6: #237d45;
+  --color-frame-6-foreground: #ffffff;
+  --color-frame-7: #ee8a2a;
+  --color-frame-7-foreground: #111111;
+  --color-frame-8: #ef8fb4;
+  --color-frame-8-foreground: #111111;
+
+  /* コース種別の印。両モード共通。文字色には使わない（白地で 4.5:1 に届かない） */
+  --color-course-turf: #4cc38a;
+  --color-course-dirt: #d9a35b;
+  --color-course-jump: #5b8def;
+
+  --font-sans: var(--font-plex-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 }
 
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
-}
-
-@layer utilities {
-  body {
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: #f7f7f7;
-  }
+/* 数字は等幅・桁揃えで表示する。Tailwind の tabular-nums と同じ要素で混ぜない */
+@utility numeric {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 @layer base {
+  /* ライト「ターフ」 */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 220.9 39.3% 11%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 220.9 39.3% 11%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 220 8.9% 46.1%;
-    --accent: 220 14.3% 95.9%;
-    --accent-foreground: 220.9 39.3% 11%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 224 71.4% 4.1%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --background: #f3f6f4;
+    --foreground: #10241a;
+    --card: #ffffff;
+    --card-foreground: #10241a;
+    --popover: #ffffff;
+    --popover-foreground: #10241a;
+    --primary: #0b7a4b;
+    --primary-foreground: #ffffff;
+    --secondary: #eef3f0;
+    --secondary-foreground: #10241a;
+    --muted: #eef3f0;
+    --muted-foreground: #52645a;
+    --accent: #eaf4ee;
+    --accent-foreground: #10241a;
+    --destructive: #c2410c;
+    --destructive-foreground: #ffffff;
+    --border: #d5ded8;
+    --input: #c4d0c8;
+    --input-background: #ffffff;
+    --ring: #0b7a4b;
+    --positive: #0b7a4b;
+    --negative: #c2410c;
+    --slow: #2563eb;
+    --warning: #a24a08;
+    --chart-1: #0b7a4b;
+    --chart-2: #2563eb;
+    --chart-3: #c2410c;
+    --chart-4: #52645a;
+    --chart-5: #d5ded8;
     --radius: 0.5rem;
   }
+
+  /* ダーク「夜の計測盤」 */
   .dark {
-    --background: 224 71.4% 4.1%;
-    --foreground: 210 20% 98%;
-    --card: 224 71.4% 4.1%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71.4% 4.1%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 210 20% 98%;
-    --primary-foreground: 220.9 39.3% 11%;
-    --secondary: 215 27.9% 16.9%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 27.9% 16.9%;
-    --muted-foreground: 217.9 10.6% 64.9%;
-    --accent: 215 27.9% 16.9%;
-    --accent-foreground: 210 20% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 20% 98%;
-    --border: 215 27.9% 16.9%;
-    --input: 215 27.9% 16.9%;
-    --ring: 216 12.2% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --background: #0d1210;
+    --foreground: #e9efeb;
+    --card: #141b18;
+    --card-foreground: #e9efeb;
+    --popover: #141b18;
+    --popover-foreground: #e9efeb;
+    --primary: #c6f36b;
+    --primary-foreground: #0d1210;
+    --secondary: #1b2420;
+    --secondary-foreground: #e9efeb;
+    --muted: #1b2420;
+    --muted-foreground: #9ca9a2;
+    --accent: #17201c;
+    --accent-foreground: #e9efeb;
+    --destructive: #ff8a7a;
+    --destructive-foreground: #0d1210;
+    --border: #27322d;
+    --input: #36433c;
+    --input-background: #202a26;
+    --ring: #c6f36b;
+    --positive: #c6f36b;
+    --negative: #ff8a7a;
+    --slow: #7fa8ff;
+    --warning: #f0b04a;
+    --chart-1: #c6f36b;
+    --chart-2: #7fa8ff;
+    --chart-3: #ff8a7a;
+    --chart-4: #9ca9a2;
+    --chart-5: #27322d;
   }
 }
 

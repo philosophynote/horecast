@@ -36,7 +36,7 @@ function formatGeneratedAt(generatedAt: string): string | null {
 
 function CommentsCard({ children }: { children: React.ReactNode }) {
   return (
-    <Card className="mt-8 bg-white border border-gray-200 shadow-xs">
+    <Card className="mt-8 bg-card border border-border shadow-xs">
       <CardHeader>
         <CardTitle>AI予想コメント</CardTitle>
       </CardHeader>
@@ -50,10 +50,10 @@ export function RacePredictionCommentsSkeleton() {
   return (
     <CommentsCard>
       <div className="animate-pulse space-y-3" aria-label="AI予想コメントを読み込み中">
-        <div className="h-4 w-32 rounded bg-gray-200" />
-        <div className="h-3 w-full rounded bg-gray-200" />
-        <div className="h-3 w-11/12 rounded bg-gray-200" />
-        <div className="h-3 w-9/12 rounded bg-gray-200" />
+        <div className="h-4 w-32 rounded bg-muted" />
+        <div className="h-3 w-full rounded bg-muted" />
+        <div className="h-3 w-11/12 rounded bg-muted" />
+        <div className="h-3 w-9/12 rounded bg-muted" />
       </div>
     </CommentsCard>
   )
@@ -63,7 +63,7 @@ function ProviderComment({ comment }: { comment: RacePredictionCommentView }) {
   const generatedAt = formatGeneratedAt(comment.generatedAt)
 
   return (
-    <div className="flex flex-col bg-gray-100 p-4 rounded-lg border border-gray-200">
+    <div className="flex flex-col bg-muted p-4 rounded-lg border border-border">
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <h3 className="text-lg font-semibold">{providerName(comment.provider)}</h3>
         {comment.modelId && (

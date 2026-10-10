@@ -19,7 +19,7 @@ type Props = {
   version: string | null
 }
 
-const selectClass = "w-full border rounded px-3 py-2 bg-white text-sm"
+const selectClass = "w-full border border-input rounded px-3 py-2 bg-input-background text-sm"
 const labelClass = "block text-sm font-medium mb-1"
 
 function SelectField({
