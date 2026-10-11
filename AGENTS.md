@@ -51,13 +51,14 @@ npm start            # 本番ビルドをローカルで起動
 - `/api/races/[id]` — 関連データを含む単一レースの取得
 - `/api/races/[id]/navigation` — 前後レースのID取得
 - `/api/races/dates` — 開催日一覧の取得
-- `/api/statistics` — 期間指定の的中・回収率統計（未指定なら過去30日）
+- `/api/statistics` — 期間（`startDate` / `endDate`、`yyyy-MM-dd` のみ。不正は 400、未指定は保存規約の今日を含む30日）の的中・回収率統計。モデルごとに全体・レースごと・競馬場別（`trackStatistics`）・開催日ごとの累積収支（`cumulative`）を返す。確定済みのレースだけを対象にする。純粋な集計は `src/app/lib/investmentStats.ts`
 - `/api/cron/delete-old-entries` — 1か月より古いデータの削除（定期実行用）
 
 ### ページ構成
 
 - **トップページ**（`/`）— クライアントコンポーネント。開催日を横並びボタンで選び、本日のサマリー・AIピックアップ（両モデルの本命が一致した発走前のレース）・競馬場ごとのレース行（◎と的中／払戻／次に発走などの状態）を表示する。統計は `/statistics` へ
 - **レース詳細**（`/races/[id]`）— サーバーコンポーネント。レース情報（想定ペース・状態・前後レース）、AIの結論（独自予想とOpenAIの印の比較と本命一致）、出馬表とAI指標（5段目盛り・直近5走のタイム指数）、AI予想コメント、推奨馬券（モデル切替）、確定後は結果と払戻を表示する。id が不正・該当なしは `notFound()`（`loading.tsx` があるためストリーミングになり、HTTP は 200 で `noindex` が付く）
+- **投資成績**（`/statistics`）— 見出しはサーバーで描き、`InvestmentDashboard`（クライアント）が `/api/statistics` を取る。期間（7日／30日／90日と開始日・終了日）とモデル（独自予想／OpenAI）を切り替え、回収率・収支・的中率、累積収支の折れ線（Recharts）、券種別・競馬場別、レースごとの成績を表示する
 - **タイム指数**（`/time-index`）— サーバーコンポーネント。`HorseTimeIndex` を絞り込み（競馬場・芝ダート・距離・クラス・馬場・期間・信頼度）付きで一覧・分布・馬ごとの推移として表示する。絞り込みはGETフォームでURLのクエリに持ち、期間未指定なら最新開催日から1週間を既定にして全件走査を避ける。`Race` に存在する行だけレース詳細へリンクする
 
 ### 主要コンポーネント
@@ -65,7 +66,7 @@ npm start            # 本番ビルドをローカルで起動
 - `RaceHeader` / `RaceNavigation` / `AiVerdict` / `EntryTable` / `TimeIndexSparkline` / `RacePredictionCommentCard` / `RecommendedBets` / `RaceResultTable` / `PayoutTable` — レース詳細の見出し・前後レース・AIの結論・出馬表（指標は `IndicatorMeter`、タイム指数は小さな折れ線）・AIコメントのカード・推奨馬券（`'use client'`、表示用に整えたデータだけ受け取る）・結果・払戻。印・結論・スパークライン・結果と払戻の並び・馬券のまとめは `src/app/lib/raceDetail.ts`
 - `RaceDateTabs` / `RaceDaySummaryCards` / `AiPickupList` / `TrackRaceList` / `RaceRow` — トップページの開催日ボタン・サマリー・ピックアップ・競馬場列・レース行。状態判定や日付の扱いは `src/app/lib/raceList.ts`
 - `RacePredictionComments` — AIコメントの取得（async、Suspense で後から流す）。表示は `RacePredictionCommentCard`
-- `StatisticsView` — モデル別の成績統計
+- `InvestmentDashboard` / `InvestmentKpis` / `ReturnRateBar` / `CumulativeProfitChart` / `BetTypeBreakdown` / `TrackBreakdown` / `RaceStatisticsTable` — 投資成績ダッシュボードの取得と切替・主要指標・回収率の横棒（100% の目印つき）・累積収支の折れ線・券種別・競馬場別・レースごとの表。純粋ロジックは `src/app/lib/investmentStats.ts`
 - `TimeIndexFilterForm` / `TimeIndexTable` / `TimeIndexDistribution` / `TimeIndexHorseTrend` — タイム指数ダッシュボードの絞り込み・一覧・分布（SVGヒストグラム）・馬ごとの推移（SVG折れ線）。純粋なヘルパーは `src/app/lib/timeIndexFilters.ts`、DBアクセスは `src/app/lib/timeIndex.ts`
 
 ### データ取得の方針
@@ -81,6 +82,7 @@ npm start            # 本番ビルドをローカルで起動
 - **ライト／ダーク** — ライトは「ターフ」、ダークは「夜の計測盤」。`next-themes` が `<html>` に `class="dark"` を付け外しし、OS設定に従う＋ヘッダーの切替ボタンで変更できる。shadcn に無い役割は `text-positive`（プラス）`text-negative`（マイナス）`text-slow`（遅い指数）`bg-input-background`（入力欄）で指定する。`text-primary` `text-negative` `text-slow` は `/80` などで薄めない（ライトの `bg-muted` 上で 4.6:1 とぎりぎりのため）
 - **書体** — 本文は IBM Plex Sans JP、数字は IBM Plex Mono。数字には `numeric` ユーティリティ（等幅＋桁揃え）を付け、`tabular-nums` 単独は使わない
 - **共通の小部品**（`src/app/components/`） — `FrameNumber`（枠番の色付き番号）、`IndicatorMeter`（AI指標の5段目盛り）、`CourseTypeMark`（芝・ダート・障害の印。色は印だけで文字には付けない）、`SignedYen` / `ReturnRate`（符号付きの収支・回収率）。純粋なロジックは `src/app/lib/` の `frameColors.ts` `indicatorMeter.ts` `courseType.ts` `signedFormat.ts`
+- **グラフ** — shadcn/ui の Chart（`src/app/components/ui/chart.tsx`、Recharts 2.15）を使う。線の色は `ChartConfig` に `var(--primary)` のようなテーマ変数を渡す。`chart.tsx` は Tailwind v4 向けに `border-(--color-border)` の記法へ直してある。小さな図（スパークラインなど）は素の SVG にテーマのクラス（`stroke-primary` など）で色を付ける
 - **レスポンシブ** — モバイルファースト。広い表は枠内で横スクロールさせる
 
 ### 日時の扱い
