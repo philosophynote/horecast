@@ -41,7 +41,7 @@ horecast/
 │   │   │   ├── RaceResultTable.tsx
 │   │   │   ├── RecommendedBets.tsx
 │   │   │   ├── SidebarClient.tsx
-│   │   │   └── StatisticsView.tsx
+│   │   │   └── InvestmentDashboard.tsx  # 投資成績ダッシュボード（/statistics）
 │   │   ├── lib/
 │   │   │   └── statistics.ts
 │   │   ├── races/

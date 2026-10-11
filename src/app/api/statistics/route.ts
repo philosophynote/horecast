@@ -1,34 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma';
-import { matchBetsWithPayouts, calculateStatistics, aggregateStatistics } from '@/app/lib/statistics'
-import { toHorsePredictionRanks } from '@/app/lib/horseIndicators'
+import { type BetStatistics, matchBetsWithPayouts, calculateStatistics, aggregateStatistics } from '@/app/lib/statistics'
+import { toHorsePredictionRanks } from '@/app/lib/horsePredictionRanks'
 import { buildRecommendedBetsFromRanks } from '@/app/lib/predictionRecommendations'
+import {
+  type ModelStatistics,
+  type RaceStatisticsInput,
+  type StatisticsResponse,
+  buildCumulativeProfit,
+  buildTrackStatistics,
+  resolveStatisticsRange,
+  toRaceStatisticsSummary,
+} from '@/app/lib/investmentStats'
+import { nowAsStoredClock, toStoredDateString } from '@/app/lib/raceList'
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
-    const startDate = searchParams.get('startDate')
-    const endDate = searchParams.get('endDate')
-    
-    // 日付範囲が指定されていない場合は過去30日間をデフォルトとする
-    const defaultEndDate = new Date()
-    const defaultStartDate = new Date()
-    defaultStartDate.setDate(defaultStartDate.getDate() - 30)
-    
-    const start = startDate ? new Date(startDate) : defaultStartDate
-    const end = endDate ? new Date(endDate) : defaultEndDate
-    const endExclusive = new Date(end)
-    if (endDate) {
-      endExclusive.setUTCDate(endExclusive.getUTCDate() + 1)
+    const range = resolveStatisticsRange(
+      { startDate: searchParams.get('startDate'), endDate: searchParams.get('endDate') },
+      nowAsStoredClock(new Date()),
+    )
+    if (!range) {
+      return NextResponse.json({ error: 'invalid date range' }, { status: 400 })
     }
-    
+
     // 指定期間のレースを取得（両モデルの予想とペイアウト情報を含む）
     const races = await prisma.race.findMany({
       where: {
-        race_time: {
-          gte: start,
-          lt: endExclusive
-        },
+        race_time: { gte: range.start, lt: range.endExclusive },
         // 結果未確定のレースを不的中として集計しない
         payouts: { some: {} },
         OR: [
@@ -45,64 +45,56 @@ export async function GET(request: NextRequest) {
             rank: true,
             logic_version: true,
             generated_at: true,
-            created_at: true
-          }
-        }
+            created_at: true,
+          },
+        },
       },
-      orderBy: {
-        race_time: 'desc'
-      }
+      orderBy: { race_time: 'desc' }
     })
-    
-    const raceSummary = (race: typeof races[number], statistics: ReturnType<typeof calculateStatistics>) => ({
+
+    type RaceRow = (typeof races)[number] & { race_time: Date }
+    // where で race_time の範囲を指定しているので null は来ないが、型の上で絞る
+    const datedRaces = races.filter((race): race is RaceRow => race.race_time !== null)
+
+    const raceSummary = (race: RaceRow, statistics: BetStatistics): RaceStatisticsInput => ({
       raceId: race.id,
-      raceTime: race.race_time,
+      date: toStoredDateString(race.race_time),
+      raceTime: race.race_time.toISOString(),
       track: race.track,
+      raceNumber: race.number,
       raceName: race.name,
-      statistics
+      statistics,
     })
 
-    const originalRaceStatistics = races
+    const originalRaceStatistics = datedRaces
       .filter(race => race.recommended_bets.length > 0)
-      .map(race => raceSummary(
-        race,
-        calculateStatistics(matchBetsWithPayouts(race.recommended_bets, race.payouts))
-      ))
+      .map(race => raceSummary(race, calculateStatistics(matchBetsWithPayouts(race.recommended_bets, race.payouts))))
 
-    const openAiRaceStatistics = races.flatMap(race => {
+    const openAiRaceStatistics = datedRaces.flatMap(race => {
       const ranks = toHorsePredictionRanks(race.horse_indicators)
       const bets = buildRecommendedBetsFromRanks(ranks)
       if (bets.length === 0) return []
-
-      return [raceSummary(
-        race,
-        calculateStatistics(matchBetsWithPayouts(bets, race.payouts))
-      )]
+      return [raceSummary(race, calculateStatistics(matchBetsWithPayouts(bets, race.payouts)))]
     })
 
-    const modelStatistics = (raceStatistics: typeof originalRaceStatistics) => ({
-      totalRaces: raceStatistics.length,
-      overallStatistics: aggregateStatistics(
-        raceStatistics.map(race => race.statistics)
-      ),
-      raceStatistics
+    const modelStatistics = (rows: RaceStatisticsInput[]): ModelStatistics => ({
+      totalRaces: rows.length,
+      overallStatistics: aggregateStatistics(rows.map(row => row.statistics)),
+      raceStatistics: rows.map(row => ({ ...row, statistics: toRaceStatisticsSummary(row.statistics) })),
+      trackStatistics: buildTrackStatistics(rows),
+      cumulative: buildCumulativeProfit(rows),
     })
-    
-    return NextResponse.json({
-      period: {
-        startDate: start.toISOString(),
-        endDate: end.toISOString()
-      },
+
+    const response: StatisticsResponse = {
+      period: { startDate: range.startDate, endDate: range.endDate },
       models: {
         original: modelStatistics(originalRaceStatistics),
-        openai: modelStatistics(openAiRaceStatistics)
-      }
-    })
+        openai: modelStatistics(openAiRaceStatistics),
+      },
+    }
+    return NextResponse.json(response)
   } catch (error) {
     console.error('Error fetching statistics:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch statistics' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch statistics' }, { status: 500 })
   }
 }
