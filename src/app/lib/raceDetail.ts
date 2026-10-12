@@ -138,15 +138,6 @@ export function buildTimeIndexSparkline(recent: RecentTimeIndex[]): TimeIndexSpa
   }
 }
 
-export type TimeIndexTone = "primary" | "slow" | "foreground"
-
-/** 105 以上は強調、95 未満は遅い指数の色 */
-export function timeIndexTone(value: number): TimeIndexTone {
-  if (value >= 105) return "primary"
-  if (value < 95) return "slow"
-  return "foreground"
-}
-
 type ResultForSort = Pick<Result, "rank" | "horse_number">
 
 function rankValue(rank: string): number {

@@ -190,6 +190,10 @@ export type TimeIndexDistribution = {
   min: number | null
   max: number | null
   confidences: ConfidenceBreakdown[]
+  /** 70未満の件数（width_bucket の 0）。bins の先頭にも畳まれている */
+  underflowCount: number
+  /** 130以上の件数（width_bucket の 31）。bins の末尾にも畳まれている */
+  overflowCount: number
 }
 
 export async function getTimeIndexDistribution(
@@ -240,6 +244,8 @@ export async function getTimeIndexDistribution(
     min: toNumber(aggregate._min.horecast_time_index_raw),
     max: toNumber(aggregate._max.horecast_time_index_raw),
     confidences: [...knownConfidences, ...unknownConfidences],
+    underflowCount: histogram.find((row) => row.bucket === 0)?.count ?? 0,
+    overflowCount: histogram.find((row) => row.bucket === HISTOGRAM_BIN_COUNT + 1)?.count ?? 0,
   }
 }
 

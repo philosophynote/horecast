@@ -1,10 +1,10 @@
 import type { Metadata } from "next"
 import { Suspense } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { TimeIndexDistribution } from "@/app/components/TimeIndexDistribution"
 import { TimeIndexFilterForm } from "@/app/components/TimeIndexFilterForm"
 import { TimeIndexHorseTrend } from "@/app/components/TimeIndexHorseTrend"
 import { TimeIndexPagination } from "@/app/components/TimeIndexPagination"
+import { TimeIndexScale } from "@/app/components/TimeIndexScale"
 import { TimeIndexTable } from "@/app/components/TimeIndexTable"
 import {
   getHorseTrend,
@@ -13,6 +13,7 @@ import {
   getTimeIndexPage,
   resolveVersion,
 } from "@/app/lib/timeIndex"
+import { pageRangeLabel } from "@/app/lib/timeIndexChart"
 import {
   buildTimeIndexWhere,
   buildTimeIndexWhereSql,
@@ -28,42 +29,15 @@ export const metadata: Metadata = {
   description: "JRA平地競走のHorecastタイム指数を一覧・推移・分布で確認する",
 }
 
-function TimeIndexGuide() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Horecastタイム指数とは</CardTitle>
-      </CardHeader>
-      <CardContent className="text-sm text-gray-700 space-y-2">
-        <p>
-          走破タイムを、同じ競馬場・芝ダート・距離・クラス・馬場状態の基準タイム（標準的な勝ち時計）と比べた値です。
-          <strong>100</strong> が同条件の標準的な勝ち時計、<strong>110</strong> は基準より約1%速い走破タイムを表します。
-        </p>
-        <p>
-          指数はレース内の相対値ではなく絶対値です。別のレース・別の条件の走同士でもそのまま比較できます。
-        </p>
-        <p>
-          基準タイムは過去レースの標本から求めるため、標本数が少ない条件では信頼度が下がります。
-          信頼度は「高 / 中 / 低 / 算出不可」の4段階で、標本が足りない走は指数を算出しません。
-        </p>
-      </CardContent>
-    </Card>
-  )
-}
-
 function SectionSkeleton({ title }: { title: string }) {
   return (
-    <Card aria-busy="true">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3 animate-pulse">
-          <div className="h-4 w-1/3 rounded bg-muted" />
-          <div className="h-40 w-full rounded bg-muted" />
-        </div>
-      </CardContent>
-    </Card>
+    <section aria-busy="true" className="rounded-xl border border-border bg-card p-5">
+      <h2 className="text-lg font-bold">{title}</h2>
+      <div className="mt-3 animate-pulse space-y-3">
+        <div className="h-4 w-1/3 rounded bg-muted" />
+        <div className="h-40 w-full rounded bg-muted" />
+      </div>
+    </section>
   )
 }
 
@@ -78,19 +52,21 @@ async function ListSection({ filter, period, version }: SectionProps) {
   const page = await getTimeIndexPage(where, filter.page)
 
   return (
-    <Card id="list">
-      <CardHeader>
-        <CardTitle>一覧</CardTitle>
-        <p className="text-sm text-gray-500">
-          レース名のリンクは、Horecastに出馬表があるレースだけに出ます。馬名を押すとその馬の推移を表示します。
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <section id="list" aria-labelledby="list-title" className="rounded-xl border border-border bg-card p-5">
+      <div className="mb-2 flex flex-wrap items-baseline justify-between gap-3">
+        <h2 id="list-title" className="text-lg font-bold">
+          一覧{" "}
+          <span className="numeric text-[13px] font-normal text-muted-foreground">
+            {pageRangeLabel(page)} · 開催日の新しい順
+          </span>
+        </h2>
+        <span className="text-xs text-muted-foreground">レース名のリンクは出馬表のあるレースだけ。馬名を押すとその馬の推移を表示</span>
+      </div>
+      <TimeIndexTable rows={page.rows} filter={filter} />
+      <div className="mt-3.5">
         <TimeIndexPagination filter={filter} page={page} />
-        <TimeIndexTable rows={page.rows} filter={filter} />
-        <TimeIndexPagination filter={filter} page={page} />
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
 
@@ -113,16 +89,20 @@ export default async function TimeIndexPage({ searchParams }: { searchParams: Pr
   const period = resolvePeriod(filter, options.latestRaceDate)
 
   return (
-    <main className="container mx-auto py-6 px-4 min-h-screen bg-background space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">タイム指数</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          JRA平地競走のHorecastタイム指数を一覧・推移・分布で確認できます。
-          {options.latestRaceDate && <span className="ml-2">最新データ: {options.latestRaceDate}</span>}
-        </p>
-      </div>
-
-      <TimeIndexGuide />
+    <main className="container mx-auto flex min-h-screen flex-col gap-7 bg-background px-4 py-8">
+      <section className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex-[1_1_360px]">
+          <div className="numeric text-xs tracking-[0.14em] text-muted-foreground">HORECAST TIME INDEX</div>
+          <h1 className="mt-1 text-[32px] font-bold leading-tight">タイム指数</h1>
+          <p className="mt-1 max-w-[560px] text-muted-foreground">
+            走破タイムを、同じ競馬場・芝ダート・距離・クラス・馬場の基準タイムと比べた絶対値です。別のレースの走同士でもそのまま比べられます。
+            {options.latestRaceDate && (
+              <span className="numeric mt-1 block text-xs">最新データ {options.latestRaceDate}</span>
+            )}
+          </p>
+        </div>
+        <TimeIndexScale />
+      </section>
 
       <TimeIndexFilterForm filter={filter} options={options} period={period} version={version} />
 
