@@ -1,17 +1,6 @@
 import type { RecentTimeIndex } from "@/app/lib/indicatorLabels"
-import {
-  SPARKLINE_HEIGHT,
-  SPARKLINE_WIDTH,
-  type TimeIndexTone,
-  buildTimeIndexSparkline,
-  timeIndexTone,
-} from "@/app/lib/raceDetail"
-
-const TONE_CLASS: Record<TimeIndexTone, string> = {
-  primary: "text-primary",
-  slow: "text-slow",
-  foreground: "text-foreground",
-}
+import { SPARKLINE_HEIGHT, SPARKLINE_WIDTH, buildTimeIndexSparkline } from "@/app/lib/raceDetail"
+import { TONE_TEXT_CLASS, timeIndexTone } from "@/app/lib/timeIndexChart"
 
 type TimeIndexSparklineProps = {
   /** 新しい順 */
@@ -46,7 +35,7 @@ export function TimeIndexSparkline({ recentTimeIndexes }: TimeIndexSparklineProp
         <circle cx={spark.last.x} cy={spark.last.y} r={3} className="fill-primary" />
       </svg>
       <span>
-        <span className={`numeric block text-lg font-semibold leading-tight ${TONE_CLASS[timeIndexTone(spark.last.value)]}`}>
+        <span className={`numeric block text-lg font-semibold leading-tight ${TONE_TEXT_CLASS[timeIndexTone(spark.last.value)]}`}>
           {Math.round(spark.last.value)}
         </span>
         <span className="block text-[11px] text-muted-foreground">前走 · 信頼度{spark.last.confidenceLabel}</span>

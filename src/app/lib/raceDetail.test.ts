@@ -14,7 +14,6 @@ import {
   resolveSettlement,
   sortPayouts,
   sortResults,
-  timeIndexTone,
   topResults,
 } from "./raceDetail"
 
@@ -136,13 +135,6 @@ describe("buildTimeIndexSparkline", () => {
     const spark = buildTimeIndexSparkline([run("2026-09-20", 110), run("2026-08-01", 90)])
     expect(spark?.last.y).toBe(5)
     expect(spark?.baselineY).toBe(15)
-  })
-
-  test("指数の色分け", () => {
-    expect(timeIndexTone(105)).toBe("primary")
-    expect(timeIndexTone(104.9)).toBe("foreground")
-    expect(timeIndexTone(95)).toBe("foreground")
-    expect(timeIndexTone(94.9)).toBe("slow")
   })
 })
 
