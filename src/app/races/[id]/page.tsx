@@ -14,6 +14,7 @@ import {
 import { RaceResultTable } from "@/app/components/RaceResultTable"
 import { RecommendedBets, type RecommendedBetSection } from "@/app/components/RecommendedBets"
 import { getHorseIndicatorLabelsByRaceId } from "@/app/lib/horseIndicators"
+import { getJockeyRecordSummary } from "@/app/lib/jockeyRecords"
 import {
   applyPayoutsToRecommendedBets,
   buildRecommendedBetsFromRanks,
@@ -81,9 +82,14 @@ export default async function RacePage({ params }: PageProps) {
   const race = await getRaceWithEntries(id)
   if (!race) notFound()
 
-  const [navigation, indicatorResult] = await Promise.all([
+  // 騎手成績は出走馬の騎手IDが要るのでレース取得の後、前後レース・指標と並列に1クエリで取る
+  const [navigation, indicatorResult, jockeyRecords] = await Promise.all([
     getNavigation(race.race_time),
     getHorseIndicatorLabelsByRaceId(id),
+    getJockeyRecordSummary(
+      race,
+      race.entries.map((entry) => entry.jockey_master_id),
+    ),
   ])
   const { indicators, predictionRanks, expectedPace } = indicatorResult
 
@@ -142,6 +148,7 @@ export default async function RacePage({ params }: PageProps) {
         indicators={indicators}
         openAiPredictionRanks={predictionRanks}
         results={isSettled ? race.results : undefined}
+        jockeyRecords={jockeyRecords}
       />
 
       <Suspense fallback={<RacePredictionCommentsSkeleton />}>
