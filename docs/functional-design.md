@@ -287,16 +287,16 @@ sequenceDiagram
 └─────────────────────────────────────┘
 ```
 
-### カラーコーディング（既存システムと統一）
+### カラーコーディング（テーマ変数で統一）
 
 | マーク | 意味 | 色 | 表示条件 |
 |--------|------|----|---------|
-| ◎ | 本命（first_pick） | red-600 | 常時 |
-| ○ | 対抗（second_pick） | blue-600 | 常時 |
-| ▲ | 単穴（third_pick） | green-600 | 常時 |
-| △ | 連下（fourth_pick） | purple-600 | 常時 |
+| ◎ | 本命（first_pick） | `text-primary`（AI強調） | 常時 |
+| ○ | 対抗（second_pick） | `text-foreground` | 常時 |
+| ▲ | 単穴（third_pick） | `text-foreground` | 常時 |
+| △ | 連下（fourth_pick） | `text-muted-foreground` | 常時 |
 
-プロバイダーラベル: `badge` コンポーネントを使用（gray系）
+印の色は AI強調（本命）とそれ以外の濃淡だけで表す。赤・青・緑・紫のような印ごとの色分けはしない。プロバイダーラベル: `badge` コンポーネントの `outline`
 
 ---
 

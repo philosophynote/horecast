@@ -1,159 +1,159 @@
 import Link from "next/link"
-import { Button } from "@/app/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
 import type { HorseTrend } from "@/app/lib/timeIndex"
 import {
+  TONE_TEXT_CLASS,
+  TREND_HEIGHT,
+  TREND_WIDTH,
+  buildTrendChart,
+  formatShortDate,
+  timeIndexTone,
+  trendSummary,
+} from "@/app/lib/timeIndexChart"
+import {
+  FILTER_PARAM_KEYS,
   formatRaceTime,
   formatTimeIndex,
   timeIndexHref,
   toTimeIndexSearchParams,
-  FILTER_PARAM_KEYS,
   type TimeIndexFilter,
 } from "@/app/lib/timeIndexFilters"
-import { BaselineCell, ConditionCell, ConfidenceBadge, RaceLinkCell, TimeIndexCell } from "./TimeIndexTable"
-
-const CHART_WIDTH = 640
-const CHART_HEIGHT = 240
-const PADDING = { top: 16, right: 32, bottom: 32, left: 40 }
-const MARKER_RADIUS = 4
-/** 縦軸の目盛が多すぎて読めなくならないよう、範囲に応じて刻みを選ぶ */
-const Y_TICK_STEPS = [5, 10, 20, 50]
-const MAX_Y_TICKS = 8
-
-function pickTickStep(range: number): number {
-  return Y_TICK_STEPS.find((step) => range / step <= MAX_Y_TICKS) ?? Y_TICK_STEPS[Y_TICK_STEPS.length - 1]
-}
+import { ConfidencePill } from "./ConfidencePill"
+import { ConditionCell, RaceLinkCell } from "./TimeIndexTable"
 
 /** 馬名検索。現在の絞り込み条件は hidden で引き継ぎ、ページ番号は1に戻す */
 export function HorseSearchForm({ filter }: { filter: TimeIndexFilter }) {
   const hidden = toTimeIndexSearchParams(filter, { horse: undefined, page: 1 })
   return (
-    <form method="get" action="/time-index#horse-trend" className="flex flex-col sm:flex-row gap-2">
+    <form method="get" action="/time-index#horse-trend" role="search" className="mt-3 flex flex-wrap items-center gap-2">
       {Array.from(hidden.entries()).map(([key, value]) => (
         <input key={key} type="hidden" name={key} value={value} />
       ))}
-      <label className="sr-only" htmlFor="time-index-horse">馬名</label>
+      <label htmlFor="time-index-horse" className="text-xs text-muted-foreground">
+        馬名
+      </label>
       <input
         id="time-index-horse"
         type="search"
         name={FILTER_PARAM_KEYS.horse}
         defaultValue={filter.horse ?? ""}
         placeholder="馬名（カタカナ）"
-        className="flex-1 border rounded px-3 py-2 text-sm bg-white"
+        className="min-h-11 max-w-80 flex-[1_1_220px] rounded-lg border border-input bg-input-background px-3 text-sm text-foreground"
       />
-      <Button type="submit">推移を表示</Button>
+      <button
+        type="submit"
+        className="min-h-11 rounded-lg border border-primary px-4 text-sm font-bold text-primary transition-colors hover:bg-accent"
+      >
+        推移を表示
+      </button>
+      <span className="text-xs text-muted-foreground">上の絞り込みに関係なく、その馬の全走を表示</span>
     </form>
   )
 }
 
-/**
- * 指数の時系列を折れ線で描く。横軸は出走順で等間隔に置き、日付はラベルで示す。
- * 100（同条件の標準的な勝ち時計）に基準線を引く。
- */
+/** 指数の時系列。横軸は出走順で等間隔、100 に基準線。信頼度 低は白抜きの丸 */
 function TrendChart({ trend }: { trend: HorseTrend }) {
-  const points = trend.runs
-    .map((run, index) => ({ run, index }))
-    .filter((point): point is { run: typeof point.run & { timeIndex: number }; index: number } =>
-      point.run.timeIndex !== null
-    )
-
-  if (points.length === 0) {
-    return <p className="text-center py-4 text-gray-500">指数が算出された走がありません</p>
+  const chart = buildTrendChart(trend.runs)
+  if (!chart) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">指数が算出された走がありません</p>
   }
-
-  const plotWidth = CHART_WIDTH - PADDING.left - PADDING.right
-  const plotHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom
-  const values = points.map((point) => point.run.timeIndex)
-  const tickStep = pickTickStep(Math.max(100, ...values) - Math.min(100, ...values) + 4)
-  const yMin = Math.floor((Math.min(100, ...values) - 2) / tickStep) * tickStep
-  const yMax = Math.ceil((Math.max(100, ...values) + 2) / tickStep) * tickStep
-  const stepCount = trend.runs.length - 1
-  const xOf = (index: number) => PADDING.left + (stepCount === 0 ? plotWidth / 2 : (index / stepCount) * plotWidth)
-  const yOf = (value: number) => PADDING.top + plotHeight - ((value - yMin) / (yMax - yMin)) * plotHeight
-
-  const yTicks: number[] = []
-  for (let tick = yMin; tick <= yMax; tick += tickStep) yTicks.push(tick)
-  // 横軸の日付ラベルは重ならないよう最大6個に間引く
-  const labelEvery = Math.max(1, Math.ceil(trend.runs.length / 6))
-  const linePath = points.map((point, i) => `${i === 0 ? "M" : "L"}${xOf(point.index)},${yOf(point.run.timeIndex)}`).join(" ")
-
   return (
     <svg
-      viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-      className="w-full h-auto"
+      viewBox={`0 0 ${TREND_WIDTH} ${TREND_HEIGHT}`}
+      className="mt-4 h-auto w-full"
       role="img"
       aria-label={`${trend.horseName}のタイム指数の推移`}
     >
-      {yTicks.map((tick) => (
-        <g key={tick}>
+      {chart.yTicks.map((tick) => (
+        <g key={tick.value}>
           <line
-            x1={PADDING.left}
-            x2={CHART_WIDTH - PADDING.right}
-            y1={yOf(tick)}
-            y2={yOf(tick)}
-            stroke={tick === 100 ? "#9ca3af" : "#e5e7eb"}
+            x1={40}
+            x2={TREND_WIDTH - 32}
+            y1={tick.y}
+            y2={tick.y}
+            className={tick.value === 100 ? "stroke-muted-foreground" : "stroke-border"}
             strokeWidth={1}
-            strokeDasharray={tick === 100 ? "4 3" : undefined}
+            strokeDasharray={tick.value === 100 ? "4 3" : undefined}
           />
-          <text x={PADDING.left - 6} y={yOf(tick) + 4} textAnchor="end" fontSize={11} fill="#6b7280">{tick}</text>
+          <text
+            x={34}
+            y={tick.y + 4}
+            textAnchor="end"
+            className={`numeric ${tick.value === 100 ? "fill-foreground" : "fill-muted-foreground"}`}
+            fontSize={11}
+          >
+            {tick.value}
+          </text>
         </g>
       ))}
-      <path d={linePath} fill="none" stroke="#3b82f6" strokeWidth={2} strokeLinejoin="round" />
-      {points.map((point) => (
-        <circle
-          key={point.run.id}
-          cx={xOf(point.index)}
-          cy={yOf(point.run.timeIndex)}
-          r={MARKER_RADIUS}
-          fill="#3b82f6"
-          stroke="#ffffff"
-          strokeWidth={2}
-        >
-          <title>{`${point.run.raceDate} ${point.run.racecourse} ${point.run.surface}${point.run.distance}m: ${formatTimeIndex(point.run.timeIndex)}`}</title>
-        </circle>
-      ))}
-      {trend.runs.map((run, index) =>
-        index % labelEvery === 0 || index === trend.runs.length - 1 ? (
-          <text key={run.id} x={xOf(index)} y={CHART_HEIGHT - 10} textAnchor="middle" fontSize={10} fill="#6b7280">
-            {run.raceDate.slice(2)}
+      <path d={chart.linePath} fill="none" className="stroke-primary" strokeWidth={2} strokeLinejoin="round" />
+      {chart.markers.map((marker) => (
+        <g key={marker.key}>
+          <circle
+            cx={marker.x}
+            cy={marker.y}
+            r={5}
+            data-testid={marker.lowConfidence ? "marker-low" : "marker"}
+            className={marker.lowConfidence ? "fill-card stroke-primary" : "fill-primary stroke-primary"}
+            strokeWidth={2}
+          >
+            <title>{marker.title}</title>
+          </circle>
+          <text x={marker.x} y={marker.y - 10} textAnchor="middle" className="numeric fill-foreground" fontSize={11} fontWeight={600}>
+            {formatTimeIndex(marker.value)}
           </text>
-        ) : null
-      )}
+        </g>
+      ))}
+      {chart.labels.map((label) => (
+        <text
+          key={label.key}
+          x={label.x}
+          y={TREND_HEIGHT - 10}
+          textAnchor="middle"
+          className="numeric fill-muted-foreground"
+          fontSize={10}
+        >
+          {label.text}
+        </text>
+      ))}
     </svg>
   )
 }
 
-function TrendTable({ trend }: { trend: HorseTrend }) {
+/** 直近の走。新しい順。レースのリンクと走破・基準を保つ */
+function RecentRuns({ trend }: { trend: HorseTrend }) {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>開催日</TableHead>
-          <TableHead>レース</TableHead>
-          <TableHead>条件</TableHead>
-          <TableHead className="text-right">馬番</TableHead>
-          <TableHead className="text-right">走破タイム</TableHead>
-          <TableHead className="text-right">基準タイム</TableHead>
-          <TableHead>信頼度</TableHead>
-          <TableHead className="text-right">指数</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {[...trend.runs].reverse().map((row) => (
-          <TableRow key={row.id}>
-            <TableCell className="whitespace-nowrap tabular-nums">{row.raceDate}</TableCell>
-            <TableCell className="whitespace-nowrap"><RaceLinkCell row={row} /></TableCell>
-            <TableCell><ConditionCell row={row} /></TableCell>
-            <TableCell className="text-right tabular-nums">{row.horseNumber}</TableCell>
-            <TableCell className="text-right tabular-nums">{formatRaceTime(row.timeSeconds)}</TableCell>
-            <TableCell className="text-right tabular-nums"><BaselineCell row={row} /></TableCell>
-            <TableCell><ConfidenceBadge confidence={row.baselineConfidence} /></TableCell>
-            <TableCell className="text-right"><TimeIndexCell row={row} /></TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="flex flex-[1_1_300px] flex-col">
+      <div className="mb-1.5 text-[13px] font-bold text-muted-foreground">直近の走</div>
+      {[...trend.runs].reverse().map((run) => (
+        <div
+          key={run.id}
+          className="grid grid-cols-[84px_minmax(0,1fr)_56px_40px] items-center gap-2.5 border-t border-border py-2 text-[13px]"
+        >
+          <span className="numeric text-muted-foreground">
+            <time dateTime={run.raceDate}>{formatShortDate(run.raceDate)}</time>
+          </span>
+          <span className="min-w-0">
+            <span className="flex flex-wrap items-center gap-x-2">
+              <RaceLinkCell row={run} />
+              <ConditionCell row={run} />
+            </span>
+            <span className="numeric block text-[11px] text-muted-foreground">
+              走破 {run.timeSeconds === null ? "—" : formatRaceTime(run.timeSeconds)} · 基準{" "}
+              {run.baselineSeconds === null ? "—" : formatRaceTime(run.baselineSeconds)}
+            </span>
+          </span>
+          <span
+            className={`numeric text-right font-semibold ${run.timeIndex === null ? "text-muted-foreground" : TONE_TEXT_CLASS[timeIndexTone(run.timeIndex)]}`}
+            title={run.unavailableReason ?? undefined}
+          >
+            {run.timeIndex === null ? "—" : formatTimeIndex(run.timeIndex)}
+          </span>
+          <span className="text-right">
+            <ConfidencePill confidence={run.baselineConfidence} />
+          </span>
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -164,34 +164,28 @@ type Props = {
 }
 
 export function TimeIndexHorseTrend({ filter, trend }: Props) {
+  const hasRuns = trend !== null && trend.runs.length > 0
   return (
-    <Card id="horse-trend">
-      <CardHeader>
-        <CardTitle>馬ごとの推移</CardTitle>
-        <p className="text-sm text-gray-500">
-          馬名で検索すると指数の時系列を表示します。上の絞り込み条件は適用せず、その馬の全走を対象にします。
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <section id="horse-trend" aria-labelledby="trend-title" className="flex flex-wrap gap-6 rounded-xl border border-border bg-card p-5">
+      <div className="min-w-0 flex-[2_1_560px]">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 id="trend-title" className="text-lg font-bold">
+            馬ごとの推移{hasRuns && ` · ${trendSummary(trend)}`}
+          </h2>
+          <span className="text-xs text-muted-foreground">白丸は信頼度 低</span>
+        </div>
         <HorseSearchForm filter={filter} />
-        {trend === null ? null : trend.runs.length > 0 ? (
-          <>
-            <h3 className="text-lg font-semibold">
-              {trend.horseName}
-              <span className="ml-2 text-sm font-normal text-gray-500">{trend.runs.length}走</span>
-            </h3>
-            <TrendChart trend={trend} />
-            <TrendTable trend={trend} />
-          </>
+        {trend === null ? null : hasRuns ? (
+          <TrendChart trend={trend} />
         ) : trend.candidates.length > 0 ? (
-          <div>
-            <p className="text-sm text-gray-600 mb-2">「{trend.horseName}」に一致する馬はいません。名前に含む馬:</p>
+          <div className="mt-4">
+            <p className="mb-2 text-sm text-muted-foreground">「{trend.horseName}」に一致する馬はいません。名前に含む馬:</p>
             <ul className="flex flex-wrap gap-2">
               {trend.candidates.map((name) => (
                 <li key={name}>
                   <Link
                     href={`${timeIndexHref(filter, { horse: name, page: 1 })}#horse-trend`}
-                    className="inline-block rounded border px-3 py-1 text-sm text-blue-600 hover:bg-blue-50"
+                    className="inline-block rounded-lg border border-border px-3 py-1 text-sm text-primary transition-colors hover:bg-accent"
                   >
                     {name}
                   </Link>
@@ -200,9 +194,10 @@ export function TimeIndexHorseTrend({ filter, trend }: Props) {
             </ul>
           </div>
         ) : (
-          <p className="text-sm text-gray-600">「{trend.horseName}」に一致する馬はいません。</p>
+          <p className="mt-4 text-sm text-muted-foreground">「{trend.horseName}」に一致する馬はいません。</p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+      {hasRuns && <RecentRuns trend={trend} />}
+    </section>
   )
 }

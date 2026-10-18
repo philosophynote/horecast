@@ -1,6 +1,11 @@
-import type { HorseIndicator, Prisma } from "@prisma/client"
+import type { Prisma } from "@prisma/client"
 import { prisma } from "@/lib/prisma"
 import { HorseIndicatorLabels, toHorseIndicatorLabels } from "@/app/lib/indicatorLabels"
+import {
+  type HorsePredictionRank,
+  pickLatestLogicVersion,
+  toHorsePredictionRanks,
+} from "@/app/lib/horsePredictionRanks"
 
 export type HorseIndicatorLabelsResult = {
   /** 馬番順の表示用ラベル。未生成・取得失敗時は空配列 */
@@ -9,64 +14,21 @@ export type HorseIndicatorLabelsResult = {
   predictionRanks: HorsePredictionRank[]
   /** 表示対象とした生成バージョン */
   logicVersion: string | null
+  /** 想定ペース（ハイ / ミドル / スロー / データ不足）。predictor はレース単位の値を全馬の行に持つ */
+  expectedPace: string | null
 }
 
-export type HorsePredictionRank = {
-  horseNumber: number
-  rank: number
-}
+export type {
+  HorsePredictionRank,
+  HorsePredictionRankSource,
+} from "@/app/lib/horsePredictionRanks"
+export { pickLatestLogicVersion, toHorsePredictionRanks } from "@/app/lib/horsePredictionRanks"
 
 const EMPTY_RESULT: HorseIndicatorLabelsResult = {
   indicators: [],
   predictionRanks: [],
   logicVersion: null,
-}
-
-type VersionedIndicator = Pick<
-  HorseIndicator,
-  "logic_version" | "generated_at" | "created_at"
->
-
-function generatedTime(indicator: VersionedIndicator): number {
-  return (indicator.generated_at ?? indicator.created_at).getTime()
-}
-
-/**
- * 生成バージョンが混在しないよう、最新の logic_version の行だけを表示対象にする。
- */
-function pickLatestLogicVersion<T extends VersionedIndicator>(indicators: T[]): T[] {
-  if (indicators.length === 0) {
-    return indicators
-  }
-
-  const latest = indicators.reduce((newest, indicator) =>
-    generatedTime(indicator) > generatedTime(newest) ? indicator : newest
-  )
-
-  return indicators.filter((indicator) => indicator.logic_version === latest.logic_version)
-}
-
-export type HorsePredictionRankSource = Pick<
-  HorseIndicator,
-  | "horse_number"
-  | "rank"
-  | "logic_version"
-  | "generated_at"
-  | "created_at"
->
-
-export function toHorsePredictionRanks(
-  indicators: HorsePredictionRankSource[]
-): HorsePredictionRank[] {
-  return pickLatestLogicVersion(indicators)
-    .filter((indicator): indicator is typeof indicator & { rank: number } =>
-      indicator.rank !== null && indicator.rank > 0
-    )
-    .map((indicator) => ({
-      horseNumber: indicator.horse_number,
-      rank: indicator.rank,
-    }))
-    .sort((a, b) => a.rank - b.rank || a.horseNumber - b.horseNumber)
+  expectedPace: null,
 }
 
 /**
@@ -87,6 +49,7 @@ async function getHorseIndicatorLabelsByWhere(
         freshness: true,
         history_count: true,
         time_index_recent: true,
+        expected_pace: true,
         rank: true,
         logic_version: true,
         generated_at: true,
@@ -94,6 +57,11 @@ async function getHorseIndicatorLabelsByWhere(
       },
     })
     const targets = pickLatestLogicVersion(indicators)
+    // findMany の順序に依存しないよう馬番順で最初の非 null を取る
+    const expectedPace =
+      [...targets]
+        .sort((a, b) => a.horse_number - b.horse_number)
+        .find((indicator) => indicator.expected_pace)?.expected_pace ?? null
 
     return {
       indicators: targets
@@ -101,6 +69,7 @@ async function getHorseIndicatorLabelsByWhere(
         .sort((a, b) => a.horseNumber - b.horseNumber),
       predictionRanks: toHorsePredictionRanks(targets),
       logicVersion: targets[0]?.logic_version ?? null,
+      expectedPace,
     }
   } catch (error) {
     console.error("Failed to fetch horse indicators", error)

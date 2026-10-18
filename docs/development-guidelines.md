@@ -175,7 +175,7 @@ useEffect(() => {
 | 種別 | 条件 | 例 |
 |------|------|----|
 | Server Component | デフォルト。DB/API fetchをサーバーで実行 | `page.tsx`, `EntryTable.tsx` |
-| Client Component | `useState`, `useEffect`, イベントハンドラーを使う | `LlmPredictSection.tsx`, `DateSelector.tsx` |
+| Client Component | `useState`, `useEffect`, イベントハンドラーを使う | `LlmPredictSection.tsx`, `RaceDateTabs.tsx` |
 
 **Client Componentの必須ルール**:
 ```typescript

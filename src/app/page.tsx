@@ -1,55 +1,60 @@
 'use client'
 
-import { Card, CardHeader, CardTitle } from "@/app/components/ui/card"
-import { RaceCard } from "./components/RaceCard"
-import { DateSelector } from "./components/DateSelector"
-import { StatisticsView } from "./components/StatisticsView"
-import { groupBy } from "lodash"
-import { Race } from "@prisma/client"
-import Image from "next/image"
-import { useState, useEffect } from "react"
-import { format } from "date-fns"
-import { formatInTimeZone } from "date-fns-tz"
+import { useEffect, useMemo, useState } from "react"
+import { AiPickupList } from "./components/AiPickupList"
+import { RaceDateTabs } from "./components/RaceDateTabs"
+import { RaceDaySummaryCards } from "./components/RaceDaySummaryCards"
+import { TrackRaceList } from "./components/TrackRaceList"
+import {
+  type RaceListItem,
+  type RaceListResponse,
+  findNextRaceIds,
+  formatRaceDateHeading,
+  isPickupRace,
+  nowAsStoredClock,
+  pickDefaultDate,
+  resolveRaceStatus,
+  toStoredDateString,
+} from "@/app/lib/raceList"
+
+type LoadedRaces = {
+  response: RaceListResponse
+  /** 取得時点の現在時刻（保存規約）。次に発走・ピックアップの判定に使う */
+  nowStored: Date
+}
 
 export default function Home() {
+  const [dates, setDates] = useState<string[]>([])
   const [selectedDate, setSelectedDate] = useState<string>("")
-  const [racesResult, setRacesResult] = useState<{ date: string; races: Race[] } | null>(null)
-  const [activeTab, setActiveTab] = useState<'races' | 'statistics'>('races')
+  const [loaded, setLoaded] = useState<LoadedRaces | null>(null)
+  const [failed, setFailed] = useState(false)
 
+  // 開催日の一覧を取り、今日（無ければ最も近い日）を既定にする。失敗しても今日へ倒す
   useEffect(() => {
+    let cancelled = false
+    const today = toStoredDateString(nowAsStoredClock(new Date()))
     const init = async () => {
+      let list: string[] = []
       try {
         const res = await fetch('/api/races/dates')
         if (res.ok) {
-          const dates: string[] = await res.json()
-          if (dates.length > 0) {
-            const today = new Date()
-            let closest = dates[0]
-            let minDiff = Math.abs(new Date(dates[0]).getTime() - today.getTime())
-            for (const dateStr of dates) {
-              const diff = Math.abs(new Date(dateStr).getTime() - today.getTime())
-              if (diff < minDiff) {
-                minDiff = diff
-                closest = dateStr
-              }
-            }
-            setSelectedDate(closest)
-          } else {
-            setSelectedDate(format(new Date(), 'yyyy-MM-dd'))
-          }
+          list = await res.json()
         }
       } catch (error) {
-        console.error('Error initializing date:', error)
-        setSelectedDate(format(new Date(), 'yyyy-MM-dd'))
+        console.error('Error fetching race dates:', error)
       }
+      if (cancelled) return
+      setDates(list)
+      setSelectedDate(pickDefaultDate(list, today) ?? today)
     }
     init()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
-    if (!selectedDate) {
-      return
-    }
+    if (!selectedDate) return
     let cancelled = false
     const fetchRaces = async (date: string) => {
       try {
@@ -57,14 +62,23 @@ export default function Home() {
         if (!res.ok) {
           throw new Error('Failed to fetch races')
         }
-        const racesData: Race[] = await res.json()
+        const response: RaceListResponse = await res.json()
         if (!cancelled) {
-          setRacesResult({ date, races: racesData })
+          setFailed(false)
+          setLoaded({ response, nowStored: nowAsStoredClock(new Date()) })
         }
       } catch (error) {
         console.error('Error fetching races:', error)
         if (!cancelled) {
-          setRacesResult({ date, races: [] })
+          setFailed(true)
+          setLoaded({
+            response: {
+              date,
+              summary: { totalRaces: 0, predictedRaces: 0, settledRaces: 0, original: null },
+              races: [],
+            },
+            nowStored: nowAsStoredClock(new Date()),
+          })
         }
       }
     }
@@ -74,147 +88,69 @@ export default function Home() {
     }
   }, [selectedDate])
 
-  const backgroundImages = [
-    '/running_horse.png',
-    '/race.png',
-    '/horse-track-bg.png'
-  ]
-
-  function getTrackAccentClass(trackName: string): string {
-    const trackColors: Record<string, string> = {
-      '東京': 'border-t-4 border-t-red-300',
-      '中山': 'border-t-4 border-t-blue-300',
-      '阪神': 'border-t-4 border-t-purple-300',
-      '京都': 'border-t-4 border-t-pink-300',
-      '中京': 'border-t-4 border-t-yellow-300',
-      '新潟': 'border-t-4 border-t-green-300',
-      '小倉': 'border-t-4 border-t-orange-300',
-      '函館': 'border-t-4 border-t-cyan-300',
-      '札幌': 'border-t-4 border-t-indigo-300',
-      '福島': 'border-t-4 border-t-teal-300'
-    }
-    return trackColors[trackName] || 'border-t-4 border-t-gray-300'
-  }
-
-  const handleDateChange = (date: string) => {
-    setSelectedDate(date)
-  }
-
   // 取得済みの結果が選択中の日付のものでない間はローディング表示にする
-  const loadedRaces = racesResult?.date === selectedDate ? racesResult.races : null
-  const loading = loadedRaces === null
-  const races = loadedRaces ?? []
+  const current = loaded?.response.date === selectedDate ? loaded : null
 
-  const groupedRaces = groupBy(races, (race) => {
-    if (race.race_time) {
-      return formatInTimeZone(new Date(race.race_time), 'UTC', 'yyyy-MM-dd')
+  const { nextRaceIds, pickupRaces } = useMemo(() => {
+    if (!current) {
+      return { nextRaceIds: new Set<number>(), pickupRaces: [] as RaceListItem[] }
     }
-    return formatInTimeZone(new Date(), 'UTC', 'yyyy-MM-dd')
-  })
+    return {
+      nextRaceIds: findNextRaceIds(current.response.races, current.nowStored),
+      pickupRaces: current.response.races.filter((race) => isPickupRace(race, current.nowStored)),
+    }
+  }, [current])
+
+  const statusOf = (item: RaceListItem) =>
+    resolveRaceStatus(item, {
+      nowStored: current?.nowStored ?? nowAsStoredClock(new Date()),
+      isNext: nextRaceIds.has(item.id),
+    })
+
+  const races = current?.response.races ?? []
+  const trackCount = new Set(races.map((race) => race.track)).size
+  const trackNames = [...new Set(races.map((race) => race.track))].join("・")
 
   return (
-    <main className="container mx-auto py-6 px-4 min-h-screen bg-gray-50">
-      {/* タブナビゲーション */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('races')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'races'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              レース一覧
-            </button>
-            <button
-              onClick={() => setActiveTab('statistics')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'statistics'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              統計情報
-            </button>
-          </nav>
+    <main className="container mx-auto flex min-h-screen flex-col gap-8 bg-background px-4 py-8">
+      <section className="flex flex-wrap items-end justify-between gap-5">
+        <div>
+          <div className="numeric text-xs tracking-[0.14em] text-muted-foreground">RACE CARD · 開催日</div>
+          <h1 className="mt-1 text-[32px] font-bold leading-tight tracking-[0.02em]">
+            {selectedDate ? formatRaceDateHeading(selectedDate) : "読み込み中…"}
+          </h1>
+          <p className="mt-1 text-muted-foreground">
+            {current
+              ? races.length === 0
+                ? "この日のレースはありません"
+                : `${trackNames} ${trackCount}場 ${races.length}レース`
+              : "レース情報を読み込み中…"}
+          </p>
         </div>
-      </div>
+        {dates.length > 0 && (
+          <RaceDateTabs dates={dates} selectedDate={selectedDate} onSelect={setSelectedDate} />
+        )}
+      </section>
 
-      {activeTab === 'statistics' ? (
-        <StatisticsView />
-      ) : (
+      {current && (
         <>
-          {/* モバイル用日付セレクター（上部に配置） */}
-          <div className="lg:hidden mb-6">
-            <DateSelector 
-              selectedDate={selectedDate} 
-              onDateChange={handleDateChange} 
-            />
-          </div>
-
-          <div className="flex gap-6">
-        {/* メインコンテンツ */}
-        <div className="flex-1">
-          {loading ? (
-            <div className="text-center py-8">
-              <p className="text-lg">レース情報を読み込み中...</p>
-            </div>
-          ) : races.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-lg">選択された日付にレースはありません</p>
-            </div>
-          ) : (
-            Object.entries(groupedRaces)
-              .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
-              .map(([date, raceList]) => (
-                <div key={date} className="mb-8">
-                  <h2 className="text-2xl font-bold mb-4">
-                    {new Date(date).toLocaleDateString('ja-JP', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {Object.entries(groupBy(raceList, "track")).map(([track, trackRaces], index) => (
-                      <div key={track} className="flex flex-col">
-                        <Card className={`relative mb-4 rounded-xl overflow-hidden min-h-[120px] ${getTrackAccentClass(track)}`}>
-                          <Image
-                            src={backgroundImages[index % backgroundImages.length]}
-                            alt="Race Track Background"
-                            fill
-                            className="absolute inset-0 opacity-50 filter grayscale object-cover"
-                          />
-                          <CardHeader className="relative bg-white/70 backdrop-blur-xs p-2 rounded-lg h-full flex items-center justify-center">
-                            <CardTitle className="text-4xl font-bold text-gray-800">{track}</CardTitle>
-                          </CardHeader>
-                        </Card>
-                        {trackRaces.map((race: Race) => (
-                          <RaceCard key={race.id} race={race} />
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))
+          <RaceDaySummaryCards summary={current.response.summary} />
+          {failed && (
+            <p role="alert" className="text-sm text-negative">
+              レース情報の取得に失敗しました。時間をおいて再読み込みしてください。
+            </p>
           )}
-          </div>
-
-          {/* デスクトップ用右側の日付セレクター */}
-          <div className="hidden lg:block w-64 shrink-0">
-            <div className="sticky top-6">
-              <DateSelector 
-                selectedDate={selectedDate} 
-                onDateChange={handleDateChange} 
-              />
-            </div>
-          </div>
-        </div>
+          {races.length > 0 && (
+            <>
+              <AiPickupList races={pickupRaces} />
+              <TrackRaceList races={races} statusOf={statusOf} />
+              <p className="text-xs text-muted-foreground">
+                払戻額は推奨馬券（複勝・ワイドBOX）を購入した場合の金額です。
+              </p>
+            </>
+          )}
         </>
       )}
     </main>
   )
 }
-

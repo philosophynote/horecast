@@ -1,158 +1,160 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import type { TimeIndexDistribution as Distribution } from "@/app/lib/timeIndex"
-import { CONFIDENCE_LABELS, HISTOGRAM_MAX, HISTOGRAM_MIN, isConfidenceLevel } from "@/app/lib/timeIndexFilters"
-import { ConfidenceBadge } from "./TimeIndexTable"
+import {
+  type HistogramTone,
+  buildHistogramDisplay,
+  confidenceShares,
+  histogramAriaLabel,
+  histogramTicks,
+  histogramWarning,
+  timeIndexTone,
+} from "@/app/lib/timeIndexChart"
+import { HISTOGRAM_BIN_WIDTH } from "@/app/lib/timeIndexFilters"
 
-const CHART_WIDTH = 640
-const CHART_HEIGHT = 220
-const PADDING = { top: 12, right: 12, bottom: 28, left: 40 }
-const BAR_GAP = 2
-
-function formatNumber(value: number | null, digits = 1): string {
-  return value === null ? "-" : value.toFixed(digits)
+const BAR_CLASS: Record<HistogramTone, string> = {
+  primary: "bg-primary",
+  slow: "bg-slow",
+  neutral: "bg-muted-foreground",
 }
 
-/** 指数の階級ごとの件数を棒グラフにする。単一系列なので凡例は置かず、値は title で読める */
-function Histogram({ distribution }: { distribution: Distribution }) {
-  const { bins } = distribution
-  const maxCount = Math.max(1, ...bins.map((bin) => bin.count))
-  const plotWidth = CHART_WIDTH - PADDING.left - PADDING.right
-  const plotHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom
-  const barWidth = plotWidth / bins.length
-  const yTicks = [0, 0.5, 1].map((ratio) => Math.round(maxCount * ratio))
-  const xTicks = Array.from({ length: (HISTOGRAM_MAX - HISTOGRAM_MIN) / 10 + 1 }, (_, i) => HISTOGRAM_MIN + i * 10)
+const SHARE_CLASS: Record<string, string> = {
+  high: "bg-foreground",
+  medium: "bg-muted-foreground",
+  low: "bg-border",
+  unavailable: "bg-muted",
+}
 
+function formatNumber(value: number | null, digits = 1): string {
+  return value === null ? "—" : value.toFixed(digits)
+}
+
+function WarningIcon() {
   return (
     <svg
-      viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
-      className="w-full h-auto"
-      role="img"
-      aria-label="タイム指数の分布"
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className="mt-0.5 shrink-0"
     >
-      {yTicks.map((tick) => {
-        const y = PADDING.top + plotHeight - (tick / maxCount) * plotHeight
-        return (
-          <g key={tick}>
-            <line x1={PADDING.left} x2={CHART_WIDTH - PADDING.right} y1={y} y2={y} stroke="#e5e7eb" strokeWidth={1} />
-            <text x={PADDING.left - 6} y={y + 4} textAnchor="end" fontSize={11} fill="#6b7280">{tick}</text>
-          </g>
-        )
-      })}
-      {bins.map((bin, index) => {
-        const height = (bin.count / maxCount) * plotHeight
-        const x = PADDING.left + index * barWidth + BAR_GAP / 2
-        const y = PADDING.top + plotHeight - height
-        return (
-          <rect
-            key={bin.from}
-            x={x}
-            y={y}
-            width={Math.max(0, barWidth - BAR_GAP)}
-            height={height}
-            rx={2}
-            fill="#3b82f6"
-          >
-            <title>{`${bin.from}〜${bin.to}: ${bin.count}件`}</title>
-          </rect>
-        )
-      })}
-      <line
-        x1={PADDING.left}
-        x2={CHART_WIDTH - PADDING.right}
-        y1={PADDING.top + plotHeight}
-        y2={PADDING.top + plotHeight}
-        stroke="#9ca3af"
-        strokeWidth={1}
-      />
-      {xTicks.map((tick) => {
-        const x = PADDING.left + ((tick - HISTOGRAM_MIN) / (HISTOGRAM_MAX - HISTOGRAM_MIN)) * plotWidth
-        return (
-          <text key={tick} x={x} y={CHART_HEIGHT - 8} textAnchor="middle" fontSize={11} fill="#6b7280">
-            {tick}
-          </text>
-        )
-      })}
+      <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
     </svg>
   )
 }
 
-function ConfidenceBreakdown({ distribution }: { distribution: Distribution }) {
-  const total = distribution.totalCount
+function Histogram({ distribution }: { distribution: Distribution }) {
+  const bars = buildHistogramDisplay(distribution)
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b">
-          <th className="text-left p-2">信頼度</th>
-          <th className="text-right p-2">件数</th>
-          <th className="text-right p-2">割合</th>
-          <th className="p-2 w-1/3"><span className="sr-only">割合のバー</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        {distribution.confidences.map((item) => {
-          const ratio = total > 0 ? item.count / total : 0
-          const label = isConfidenceLevel(item.confidence) ? CONFIDENCE_LABELS[item.confidence] : item.confidence
-          return (
-            <tr key={item.confidence} className="border-b">
-              <td className="p-2"><ConfidenceBadge confidence={item.confidence} /></td>
-              <td className="text-right p-2 tabular-nums">{item.count.toLocaleString()}</td>
-              <td className="text-right p-2 tabular-nums">{(ratio * 100).toFixed(1)}%</td>
-              <td className="p-2">
-                <div className="h-2 w-full rounded bg-gray-100" aria-hidden="true">
-                  <div
-                    className="h-2 rounded bg-blue-500"
-                    style={{ width: `${Math.round(ratio * 100)}%` }}
-                    title={`${label}: ${item.count}件`}
-                  />
-                </div>
-              </td>
-            </tr>
-          )
-        })}
-      </tbody>
-    </table>
+    <>
+      <div
+        role="img"
+        aria-label={histogramAriaLabel(bars)}
+        className="relative mt-4 flex h-[220px] items-end gap-px border-b border-muted-foreground"
+      >
+        {bars.map((bar) => (
+          <div
+            key={bar.key}
+            title={bar.title}
+            data-testid={bar.edge ? `bar-${bar.edge}` : undefined}
+            className={`flex-1 rounded-t-[2px] ${BAR_CLASS[bar.tone]}`}
+            style={{ height: `${Math.max(bar.count > 0 ? 1 : 0, bar.heightRatio * 100)}%` }}
+          />
+        ))}
+      </div>
+      <div aria-hidden="true" className="numeric relative mt-1.5 h-4 text-[11px] text-muted-foreground">
+        {histogramTicks().map((tick) => (
+          <span
+            key={tick.label}
+            className={`absolute -translate-x-1/2 ${tick.label === "100" ? "font-semibold text-foreground" : ""}`}
+            style={{ left: `${tick.position}%` }}
+          >
+            {tick.label}
+          </span>
+        ))}
+      </div>
+    </>
+  )
+}
+
+function Summary({ distribution }: { distribution: Distribution }) {
+  const warning = histogramWarning(distribution)
+  const shares = confidenceShares(distribution)
+  const minTone = distribution.min !== null && timeIndexTone(distribution.min) === "slow" ? "text-slow" : ""
+  const maxTone = distribution.max !== null && timeIndexTone(distribution.max) === "primary" ? "text-primary" : ""
+  return (
+    <div className="flex flex-[1_1_300px] flex-col gap-4 rounded-xl border border-border bg-card p-5">
+      <h2 className="text-lg font-bold">この条件の概要</h2>
+      {warning && (
+        <p role="note" className="flex gap-2 text-[13px] text-warning">
+          <WarningIcon />
+          <span>{warning}</span>
+        </p>
+      )}
+      <dl className="grid grid-cols-2 gap-4">
+        <div>
+          <dt className="text-xs text-muted-foreground">指数あり / 全走</dt>
+          <dd className="numeric text-[26px] font-semibold">
+            {distribution.indexedCount.toLocaleString("ja-JP")}
+            <span className="text-[15px] text-muted-foreground"> / {distribution.totalCount.toLocaleString("ja-JP")}</span>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">平均</dt>
+          <dd className="numeric text-[26px] font-semibold">{formatNumber(distribution.average)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">最小</dt>
+          <dd className={`numeric text-[26px] font-semibold ${minTone}`}>{formatNumber(distribution.min)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs text-muted-foreground">最大</dt>
+          <dd className={`numeric text-[26px] font-semibold ${maxTone}`}>{formatNumber(distribution.max)}</dd>
+        </div>
+      </dl>
+      <div>
+        <div className="mb-1.5 text-xs text-muted-foreground">基準タイムの信頼度</div>
+        <div aria-hidden="true" className="flex h-2.5 gap-0.5 overflow-hidden rounded-full">
+          {shares
+            .filter((share) => share.ratio > 0)
+            .map((share) => (
+              <div
+                key={share.confidence}
+                className={SHARE_CLASS[share.confidence] ?? "bg-muted"}
+                style={{ width: `${share.ratio * 100}%` }}
+              />
+            ))}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-3.5 gap-y-1 text-xs text-foreground">
+          {shares.map((share) => (
+            <span key={share.confidence}>
+              {share.label} <span className="numeric">{(share.ratio * 100).toFixed(1)}%</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
 export function TimeIndexDistribution({ distribution }: { distribution: Distribution }) {
   return (
-    <Card id="distribution">
-      <CardHeader>
-        <CardTitle>分布</CardTitle>
-        <p className="text-sm text-gray-500">
-          絞り込んだ条件の指数のヒストグラム（{HISTOGRAM_MIN}未満と{HISTOGRAM_MAX}以上は両端に含む）と、基準タイムの信頼度の内訳。
-          標本が少なく信頼度が低い条件を見つける目的で使う。
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <dl className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div>
-            <dt className="text-gray-500">指数あり / 全件</dt>
-            <dd className="text-xl font-bold tabular-nums">
-              {distribution.indexedCount.toLocaleString()}
-              <span className="text-sm font-normal text-gray-500"> / {distribution.totalCount.toLocaleString()}</span>
-            </dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">平均</dt>
-            <dd className="text-xl font-bold tabular-nums">{formatNumber(distribution.average)}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">最小</dt>
-            <dd className="text-xl font-bold tabular-nums">{formatNumber(distribution.min)}</dd>
-          </div>
-          <div>
-            <dt className="text-gray-500">最大</dt>
-            <dd className="text-xl font-bold tabular-nums">{formatNumber(distribution.max)}</dd>
-          </div>
-        </dl>
+    <section id="distribution" aria-label="分布と概要" className="flex flex-wrap gap-4">
+      <div className="min-w-0 flex-[2_1_560px] rounded-xl border border-border bg-card p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="text-lg font-bold">分布</h2>
+          <span className="text-xs text-muted-foreground">{HISTOGRAM_BIN_WIDTH}ポイント刻み · 指数の無い走を除く</span>
+        </div>
         {distribution.indexedCount === 0 ? (
-          <p className="text-center py-4 text-gray-500">指数が算出された行がありません</p>
+          <p className="py-10 text-center text-sm text-muted-foreground">指数が算出された走がありません</p>
         ) : (
           <Histogram distribution={distribution} />
         )}
-        <ConfidenceBreakdown distribution={distribution} />
-      </CardContent>
-    </Card>
+      </div>
+      <Summary distribution={distribution} />
+    </section>
   )
 }
