@@ -3,6 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server"
 import type { Entry } from "@prisma/client"
 import { EntryTable } from "./EntryTable"
 import { toHorseIndicatorLabels } from "@/app/lib/indicatorLabels"
+import {
+  type JockeyRecordRow,
+  type JockeyRecordSummary,
+  toJockeyRecordLabels,
+} from "@/app/lib/jockeyRecordLabels"
 
 type EntryWithMasters = Entry & {
   HorseMaster: { name: string }
@@ -17,6 +22,7 @@ const entry = (horseNumber: number): EntryWithMasters =>
     horse_number: horseNumber,
     sex: "牡",
     age: 4,
+    jockey_master_id: 100 + horseNumber,
     jockey_weight: 57,
     HorseMaster: { name: `馬${horseNumber}` },
     JockeyMaster: { name: `騎手${horseNumber}` },
@@ -143,4 +149,83 @@ test("指標が無いときは指標の列を出さない", () => {
   expect(html).not.toContain("タイム指数")
   expect(html).toContain("馬1")
   expect(html).toContain("騎手1")
+})
+
+const raceCondition = { racecourse: "東京", surface: "ダート", distanceBand: "短距離" }
+
+const record = (
+  jockeyMasterId: number,
+  condition: Partial<JockeyRecordRow>,
+  counts: { rides: number; wins?: number; seconds?: number; thirds?: number },
+): JockeyRecordRow => ({
+  jockeyMasterId,
+  ...raceCondition,
+  wins: 0,
+  seconds: 0,
+  thirds: 0,
+  ...counts,
+  ...condition,
+})
+
+const renderWithJockeyRecords = (
+  horseNumbers: number[],
+  rows: JockeyRecordRow[],
+  generatedAt: Date | null = new Date("2026-10-10T09:04:49Z"),
+) => {
+  const entries = horseNumbers.map(entry)
+  const summary: JockeyRecordSummary = {
+    labels: toJockeyRecordLabels(
+      entries.map((item) => item.jockey_master_id),
+      rows,
+      raceCondition,
+    ),
+    generatedAt,
+  }
+  return renderToStaticMarkup(<EntryTable entries={entries} predicts={[]} jockeyRecords={summary} />)
+}
+
+test("騎手名の下に開催条件での勝率・複勝率・騎乗数を出し、脚注に集計日（JST）を出す", () => {
+  const html = renderWithJockeyRecords([1], [record(101, {}, { rides: 351, wins: 54, seconds: 45, thirds: 35 })])
+  expect(html).toContain("騎手1")
+  expect(html).toContain(">15.4%<")
+  expect(html).toContain(">38.2%<")
+  expect(html).toContain("351騎乗")
+  expect(html).toContain("東京・ダート・短距離")
+  expect(html).not.toContain("※")
+  expect(html).not.toContain("text-warning")
+  expect(html).toContain(">2026-10-10</span> 時点。")
+  expect(html).toContain("min-w-[760px]")
+})
+
+test("条件を広げた騎手は※と警告色で広げた条件を出し、脚注に注記を足す", () => {
+  const html = renderWithJockeyRecords(
+    [1],
+    [
+      record(101, {}, { rides: 5, wins: 1 }),
+      record(101, { distanceBand: "all" }, { rides: 40, wins: 4, seconds: 2, thirds: 2 }),
+    ],
+  )
+  expect(html).toContain(">10.0%<")
+  expect(html).toContain(">20.0%<")
+  expect(html).toContain('text-warning" title="データが少なく、正確性に難があります">※東京・ダート・全距離')
+  expect(html).toContain("※ 開催条件での騎乗数が20未満のため")
+})
+
+test("all でも20未満ならデータ不足、集計行が無ければデータなし", () => {
+  const html = renderWithJockeyRecords(
+    [1, 2],
+    [record(101, { racecourse: "all", surface: "all", distanceBand: "all" }, { rides: 19 })],
+  )
+  expect(html).toContain("データ不足")
+  expect(html).toContain("データなし")
+  expect(html).not.toContain("勝率 <")
+  expect(html).not.toContain("データが少なく")
+})
+
+test("騎手成績を渡さなければ（障害レース・取得失敗）成績も脚注も出さない", () => {
+  const html = renderToStaticMarkup(<EntryTable entries={[entry(1)]} predicts={[]} />)
+  expect(html).toContain("騎手1")
+  expect(html).not.toContain("勝率")
+  expect(html).not.toContain("データなし")
+  expect(html).toContain("min-w-[640px]")
 })
