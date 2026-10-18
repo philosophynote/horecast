@@ -63,7 +63,7 @@ npm start            # 本番ビルドをローカルで起動
 
 ### 主要コンポーネント
 
-- `RaceHeader` / `RaceNavigation` / `AiVerdict` / `EntryTable` / `TimeIndexSparkline` / `RacePredictionCommentCard` / `RecommendedBets` / `RaceResultTable` / `PayoutTable` — レース詳細の見出し・前後レース・AIの結論・出馬表（指標は `IndicatorMeter`、タイム指数は小さな折れ線）・AIコメントのカード・推奨馬券（`'use client'`、表示用に整えたデータだけ受け取る）・結果・払戻。印・結論・スパークライン・結果と払戻の並び・馬券のまとめは `src/app/lib/raceDetail.ts`
+- `RaceHeader` / `RaceNavigation` / `AiVerdict` / `EntryTable` / `TimeIndexSparkline` / `RacePredictionCommentCard` / `RecommendedBets` / `RaceResultTable` / `PayoutTable` — レース詳細の見出し・前後レース・AIの結論・出馬表（指標は `IndicatorMeter`、タイム指数は小さな折れ線。騎手名の下に `JockeyRacecourseRecord` から求めた「このレースの開催条件（競馬場 × 芝ダ × 距離帯）」での勝率・複勝率・騎乗数を出し、騎乗数20未満は距離帯 → 芝ダ → 競馬場の順に `all` へ広げて ※ と `text-warning` で注記する。障害レースでは出さない。純粋なヘルパーは `src/app/lib/jockeyRecordLabels.ts`、DBアクセス（1レース1クエリ）は `src/app/lib/jockeyRecords.ts`）・AIコメントのカード・推奨馬券（`'use client'`、表示用に整えたデータだけ受け取る）・結果・払戻。印・結論・スパークライン・結果と払戻の並び・馬券のまとめは `src/app/lib/raceDetail.ts`
 - `RaceDateTabs` / `RaceDaySummaryCards` / `AiPickupList` / `TrackRaceList` / `RaceRow` — トップページの開催日ボタン・サマリー・ピックアップ・競馬場列・レース行。状態判定や日付の扱いは `src/app/lib/raceList.ts`
 - `RacePredictionComments` — AIコメントの取得（async、Suspense で後から流す）。表示は `RacePredictionCommentCard`
 - `InvestmentDashboard` / `InvestmentKpis` / `ReturnRateBar` / `CumulativeProfitChart` / `BetTypeBreakdown` / `TrackBreakdown` / `RaceStatisticsTable` — 投資成績ダッシュボードの取得と切替・主要指標・回収率の横棒（100% の目印つき）・累積収支の折れ線・券種別・競馬場別・レースごとの表。純粋ロジックは `src/app/lib/investmentStats.ts`
