@@ -62,7 +62,7 @@ npm start            # 本番ビルドをローカルで起動
 
 ### 主要コンポーネント
 
-- `EntryTable` — 出馬表（馬・騎手・AI予想スコア）
+- `EntryTable` — 出馬表（馬・騎手・AI予想スコア）。騎手名の下に `JockeyRacecourseRecord` から求めた「このレースの開催条件（競馬場 × 芝ダ × 距離帯）」での勝率・複勝率・騎乗数を出す。騎乗数20未満は距離帯 → 芝ダ → 競馬場の順に `all` へ広げ、※を付けて注記する。障害レースでは出さない。純粋なヘルパーは `src/app/lib/jockeyRecordLabels.ts`、DBアクセス（1レース1クエリ）は `src/app/lib/jockeyRecords.ts`
 - `RaceCard` — トップページのレース概要カード
 - `RecommendedBets` — AIが生成した推奨馬券
 - `RaceResultTable` — レース結果とオッズ
