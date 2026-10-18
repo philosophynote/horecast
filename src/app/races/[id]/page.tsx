@@ -12,6 +12,7 @@ import {
 import { formatInTimeZone } from "date-fns-tz"
 import { prisma } from "@/lib/prisma"
 import { getHorseIndicatorLabelsByRaceId } from "@/app/lib/horseIndicators"
+import { getJockeyRecordSummary } from "@/app/lib/jockeyRecords"
 import { Suspense } from "react"
 import {
   applyPayoutsToRecommendedBets,
@@ -124,6 +125,11 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
   if (!race) {
     return <div>レースが見つかりません</div>
   }
+  // 出走馬の騎手IDが要るのでレース取得の後に1クエリで取る
+  const jockeyRecords = await getJockeyRecordSummary(
+    race,
+    race.entries.map((entry) => entry.jockey_master_id)
+  )
   const { indicators, predictionRanks } = indicatorResult
   const openAiRecommendedBets = applyPayoutsToRecommendedBets(
     buildRecommendedBetsFromRanks(predictionRanks),
@@ -156,6 +162,7 @@ export default async function RacePage({ params }: { params: Promise<{ id: strin
         predicts={race.predicts}
         indicators={indicators}
         openAiPredictionRanks={predictionRanks}
+        jockeyRecords={jockeyRecords}
       />
       <Suspense fallback={<RacePredictionCommentsSkeleton />}>
         <RacePredictionComments netkeibaRaceId={race.netkeiba_race_id} />
