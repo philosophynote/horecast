@@ -12,6 +12,8 @@ on:
 
 jobs:
   claude-review:
+    # Dependabot 起点の実行には secrets が渡らず、Bot アクターも拒否されるためスキップする
+    if: github.actor != 'dependabot[bot]'
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||
