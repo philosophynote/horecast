@@ -33,6 +33,17 @@ npm start            # 本番ビルドをローカルで起動
 - `NEXT_PUBLIC_API_URL` — 公開URL。`layout.tsx` の `metadataBase` に使う（未設定なら `http://localhost:3000`）
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID` — Google Analytics ID（任意。未設定ならGAタグを出力しない）
 
+## クラウド環境（Claude Code on the web）
+
+クラウドのセッションには秘密情報を置かない。`DATABASE_URL` と `DIRECT_URL` は環境側でローカルの PostgreSQL（`postgresql://postgres:postgres@localhost:5432/horecast`）を指す。
+
+- 依存が入っていなければ（`node_modules` が無ければ）`npm ci` を実行する。環境のセットアップスクリプトが入れている場合もある
+- DB を使う前に `service postgresql start` を実行する。プロセスはセッションをまたいで残らない
+- ローカル DB には `npx prisma migrate deploy` でスキーマを作れる。Supabase の `service_role` / `anon` / `authenticated` ロールはセットアップ時に作ってある。無ければ先に `CREATE ROLE ... NOLOGIN` で作る
+- `npm run build` は `prisma migrate deploy` を含む。接続先がローカル DB であることを確かめてから実行する。本番 DB へマイグレーションを当てたり書き込んだりしない
+- 本番データを見るときは Supabase のコネクタで読み取りだけ行う。ローカル DB は空なので、画面は空の表示までしか確かめられない。実データでの見た目は https://www.horecast.net/ で確かめる
+- プロジェクトのスレッドでは `.claude/settings.json` のフックや `.claude/commands/` が自動では読まれない。必要なら該当ファイルを直接読む
+
 ## アーキテクチャ概要
 
 ### データベースとORM
