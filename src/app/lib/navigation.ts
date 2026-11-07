@@ -3,6 +3,7 @@ export const NAV_ITEMS = [
   { href: "/", label: "レース一覧" },
   { href: "/statistics", label: "投資成績" },
   { href: "/time-index", label: "タイム指数" },
+  { href: "/jockeys", label: "騎手成績" },
 ] as const
 
 /**
