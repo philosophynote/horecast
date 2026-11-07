@@ -1,4 +1,5 @@
-import { Prisma, type HorseTimeIndex } from "@prisma/client"
+import type { HorseTimeIndex, Prisma } from "@prisma/client"
+import { sqltag } from "@prisma/client/runtime/client"
 import { unstable_cache } from "next/cache"
 import { formatInTimeZone } from "date-fns-tz"
 import { prisma } from "@/lib/prisma"
@@ -203,7 +204,7 @@ export async function getTimeIndexDistribution(
 ): Promise<TimeIndexDistribution> {
   const [histogram, aggregate, confidences] = await Promise.all([
     // 階級ごとの件数をDB側で数え、全期間を指定されても指数を全件取り出さないようにする
-    prisma.$queryRaw<Array<{ bucket: number; count: number }>>(Prisma.sql`
+    prisma.$queryRaw<Array<{ bucket: number; count: number }>>(sqltag`
       SELECT
         width_bucket("horecast_time_index_raw", ${HISTOGRAM_MIN}, ${HISTOGRAM_MAX}, ${HISTOGRAM_BIN_COUNT})::int AS bucket,
         count(*)::int AS count

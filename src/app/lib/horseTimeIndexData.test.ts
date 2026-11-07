@@ -1,5 +1,6 @@
 import { beforeEach, expect, test, vi } from "vitest"
-import { Prisma, type HorseTimeIndex } from "@prisma/client"
+import type { HorseTimeIndex } from "@prisma/client"
+import { Decimal } from "@prisma/client/runtime/client"
 import { getHorseTimeIndexDashboard, getTimeIndexHorseProfile, searchTimeIndexHorses } from "./horseTimeIndexData"
 
 const { table, races } = vi.hoisted(() => ({
@@ -10,7 +11,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: { horseTimeIndex: table, race: races } 
 vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }))
 
 const d = (day: string) => new Date(`${day}T00:00:00Z`)
-const decimal = (value: number | null) => value === null ? null : new Prisma.Decimal(value)
+const decimal = (value: number | null) => value === null ? null : new Decimal(value)
 const run = (id: number, index: number | null): HorseTimeIndex => ({
   id, netkeiba_race_id: `2026050101${String(id).padStart(2, "0")}`, horse_number: 1, horse_name: "テストホース",
   race_date: d(`2026-10-${String(id).padStart(2, "0")}`), racecourse: "東京", surface: "芝", distance: 1600, class_name: "1勝クラス", going: "良",
