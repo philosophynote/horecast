@@ -50,6 +50,8 @@ export type TimeIndexFilter = {
   startDate?: string
   endDate?: string
   horse?: string
+  q?: string
+  view?: "all" | "horses"
   page: number
 }
 
@@ -64,6 +66,8 @@ export const FILTER_PARAM_KEYS = {
   startDate: "start",
   endDate: "end",
   horse: "horse",
+  q: "q",
+  view: "view",
   page: "page",
 } as const
 
@@ -90,7 +94,8 @@ export function parseTimeIndexSearchParams(searchParams: SearchParamsInput): Tim
   const distance = distanceRaw && /^\d+$/.test(distanceRaw) ? Number(distanceRaw) : undefined
 
   const pageRaw = get(FILTER_PARAM_KEYS.page)
-  const page = pageRaw && /^\d+$/.test(pageRaw) && Number(pageRaw) >= 1 ? Number(pageRaw) : 1
+  const pageNumber = Number(pageRaw)
+  const page = pageRaw && /^\d+$/.test(pageRaw) && Number.isSafeInteger(pageNumber) && pageNumber >= 1 && pageNumber <= 1_000_000 ? pageNumber : 1
 
   const confidenceRaw = get(FILTER_PARAM_KEYS.confidence)
   const confidence = confidenceRaw && isConfidenceLevel(confidenceRaw) ? confidenceRaw : undefined
@@ -115,6 +120,8 @@ export function parseTimeIndexSearchParams(searchParams: SearchParamsInput): Tim
     startDate,
     endDate,
     horse: get(FILTER_PARAM_KEYS.horse),
+    q: get(FILTER_PARAM_KEYS.q),
+    view: get(FILTER_PARAM_KEYS.view) === "all" ? "all" : get(FILTER_PARAM_KEYS.view) === "horses" ? "horses" : undefined,
     page,
   }
 }
@@ -139,6 +146,8 @@ export function toTimeIndexSearchParams(
   set(FILTER_PARAM_KEYS.startDate, merged.startDate)
   set(FILTER_PARAM_KEYS.endDate, merged.endDate)
   set(FILTER_PARAM_KEYS.horse, merged.horse)
+  set(FILTER_PARAM_KEYS.q, merged.q)
+  set(FILTER_PARAM_KEYS.view, merged.view)
   // 1ページ目はURLを短く保つため省略する
   if (merged.page > 1) set(FILTER_PARAM_KEYS.page, merged.page)
   return params

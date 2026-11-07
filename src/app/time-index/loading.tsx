@@ -18,9 +18,8 @@ export default function Loading() {
         <h1 className="mt-1 text-[32px] font-bold leading-tight">タイム指数</h1>
         <p className="mt-1 text-sm text-muted-foreground">読み込み中…</p>
       </div>
-      <SkeletonSection title="絞り込み" />
-      <SkeletonSection title="一覧" />
-      <SkeletonSection title="分布" />
+      <SkeletonSection title="競走馬検索" />
+      <SkeletonSection title="タイム指数" />
     </main>
   )
 }

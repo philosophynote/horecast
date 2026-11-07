@@ -235,7 +235,7 @@ export function buildTrendChart(runs: TrendRun[]): TrendChart | null {
   return {
     yTicks,
     baselineY: yOf(100),
-    linePath: points.map((point, i) => `${i === 0 ? "M" : "L"}${xOf(point.index)},${yOf(point.run.timeIndex)}`).join(" "),
+    linePath: points.map((point, i) => `${i === 0 || point.index !== points[i - 1].index + 1 ? "M" : "L"}${xOf(point.index)},${yOf(point.run.timeIndex)}`).join(" "),
     markers: points.map((point) => ({
       key: point.run.id,
       x: xOf(point.index),

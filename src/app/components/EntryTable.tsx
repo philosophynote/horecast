@@ -18,6 +18,7 @@ import {
 } from "@/app/lib/jockeyRecordLabels"
 import { buildOpenAiMarks, buildOriginalMarks, sortResults } from "@/app/lib/raceDetail"
 import { jockeyDashboardHref } from "@/app/lib/jockeyDashboard"
+import { horseTimeIndexHref } from "@/app/lib/horseTimeIndexDashboard"
 import { FrameNumber } from "./FrameNumber"
 import { IndicatorMeter } from "./IndicatorMeter"
 import { TimeIndexSparkline } from "./TimeIndexSparkline"
@@ -227,7 +228,7 @@ export function EntryTable({
                     <Mark mark={openAi} />
                   </TableCell>
                   <TableCell className="min-w-0">
-                    <span className="block truncate text-[15px] font-bold">{entry.HorseMaster?.name ?? "不明"}</span>
+                    {entry.HorseMaster ? <Link href={horseTimeIndexHref(entry.HorseMaster.name)} className="block truncate text-[15px] font-bold underline decoration-border underline-offset-4 hover:text-primary">{entry.HorseMaster.name}</Link> : <span className="block text-[15px] font-bold">不明</span>}
                     <span className="block text-xs text-muted-foreground">
                       {entry.sex}
                       {entry.age}

@@ -77,3 +77,13 @@ test("負の値と 130 超は棒を端でクリップし、色は遅い／強調
 test("0 件は案内文", () => {
   expect(renderToStaticMarkup(<TimeIndexTable rows={[]} filter={filter} />)).toContain("条件に一致するタイム指数がありません")
 })
+
+test("全走画面の条件を持ち込まず馬別画面を開き、馬別履歴は年も表示する", () => {
+  const html = renderToStaticMarkup(<TimeIndexTable rows={[row()]} filter={{ page: 4, view: "all", startDate: "2026-10-01", racecourse: "京都" }} />)
+  const href = html.match(/href="(\/time-index[^\"]+)"/)?.[1]
+  expect(href).toContain("horse=")
+  expect(href).not.toContain("view=all")
+  expect(href).not.toContain("start=")
+  expect(href).not.toContain("page=")
+  expect(renderToStaticMarkup(<TimeIndexTable rows={[row()]} filter={{ page: 1, horse: "ミナモトノカゼ" }} />)).toContain(">2026-10-04</time>")
+})
