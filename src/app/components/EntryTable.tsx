@@ -12,6 +12,8 @@ import {
   type JockeyRecordSummary,
   MIN_RIDES,
   NO_RECORD_LABEL,
+  selectTopRateJockeyIds,
+  TOP_RATE_COUNT,
 } from "@/app/lib/jockeyRecordLabels"
 import { buildOpenAiMarks, buildOriginalMarks, sortResults } from "@/app/lib/raceDetail"
 import { FrameNumber } from "./FrameNumber"
@@ -49,11 +51,31 @@ function finishClass(rank: string): string {
   return !Number.isNaN(value) && value <= 3 ? "text-primary" : "text-muted-foreground"
 }
 
+/** 率の数字。レース内上位の騎手は文字を大きくして目立たせる */
+function Rate({ rate, isTop, name }: { rate: number; isTop: boolean; name: string }) {
+  return (
+    <span
+      className={`numeric text-foreground ${isTop ? "text-base font-bold" : "font-semibold"}`}
+      title={isTop ? `レース内の${name}上位${TOP_RATE_COUNT}位以内` : undefined}
+    >
+      {formatRate(rate)}
+    </span>
+  )
+}
+
 /**
  * 騎手名の下に、このレースの開催条件での勝率・複勝率と騎乗数を出す。
  * 条件を広げた値は ※ を付け、注記の本文はテーブル下の脚注にまとめる。
  */
-function JockeyRecord({ label }: { label: JockeyRecordLabel | undefined }) {
+function JockeyRecord({
+  label,
+  isTopWinRate,
+  isTopPlaceRate,
+}: {
+  label: JockeyRecordLabel | undefined
+  isTopWinRate: boolean
+  isTopPlaceRate: boolean
+}) {
   if (!label || label.status === "none") {
     return <span className="mt-0.5 block text-xs text-muted-foreground">{NO_RECORD_LABEL}</span>
   }
@@ -63,9 +85,9 @@ function JockeyRecord({ label }: { label: JockeyRecordLabel | undefined }) {
   return (
     <>
       <span className="mt-0.5 block whitespace-nowrap text-xs leading-snug text-muted-foreground">
-        勝率 <span className="numeric font-semibold text-foreground">{formatRate(label.winRate)}</span>
+        勝率 <Rate rate={label.winRate} isTop={isTopWinRate} name="勝率" />
         <span className="mx-1 text-border">|</span>
-        複勝率 <span className="numeric font-semibold text-foreground">{formatRate(label.placeRate)}</span>{" "}
+        複勝率 <Rate rate={label.placeRate} isTop={isTopPlaceRate} name="複勝率" />{" "}
         <span className="numeric">{label.rides}騎乗</span>
       </span>
       <span
@@ -86,6 +108,7 @@ function JockeyRecordFootnote({ summary }: { summary: JockeyRecordSummary }) {
     <div className="px-5 pb-4 text-xs leading-relaxed text-muted-foreground">
       <p>
         騎手成績はJRA平地（障害・地方・海外を含まない）の集計で、勝率 = 1着 / 騎乗数、複勝率 = 3着以内 / 騎乗数。
+        レース内で上位{TOP_RATE_COUNT}位以内の率は大きく表示しています。
         {generatedOn && (
           <>
             {" "}
@@ -120,6 +143,8 @@ export function EntryTable({
   const showFinish = results !== undefined && results.length > 0
   const jockeyRecordMap = new Map((jockeyRecords?.labels ?? []).map((label) => [label.jockeyMasterId, label]))
   const showJockeyRecords = jockeyRecords !== null
+  const topWinRateIds = selectTopRateJockeyIds(jockeyRecords?.labels ?? [], "winRate")
+  const topPlaceRateIds = selectTopRateJockeyIds(jockeyRecords?.labels ?? [], "placeRate")
   // 騎手成績の2行が入ると騎手列が広がるので、表の最小幅も合わせる
   const tableMinWidth = showIndicators
     ? showJockeyRecords
@@ -211,7 +236,13 @@ export function EntryTable({
                       {entry.JockeyMaster?.name ?? "不明"}{" "}
                       <span className="numeric text-xs text-muted-foreground">{entry.jockey_weight}kg</span>
                     </span>
-                    {showJockeyRecords && <JockeyRecord label={jockeyRecordMap.get(entry.jockey_master_id)} />}
+                    {showJockeyRecords && (
+                      <JockeyRecord
+                        label={jockeyRecordMap.get(entry.jockey_master_id)}
+                        isTopWinRate={topWinRateIds.has(entry.jockey_master_id)}
+                        isTopPlaceRate={topPlaceRateIds.has(entry.jockey_master_id)}
+                      />
+                    )}
                   </TableCell>
                   {showIndicators &&
                     (insufficient ? (

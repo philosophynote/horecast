@@ -5,8 +5,10 @@ import {
   formatRate,
   isJockeyRecordTarget,
   selectJockeyRecordLabel,
+  selectTopRateJockeyIds,
   toDistanceBand,
   toJockeyRecordLabels,
+  type JockeyRecordLabel,
   type JockeyRecordRow,
 } from "./jockeyRecordLabels"
 
@@ -181,4 +183,68 @@ test("formatConditionLabel / formatRate の表示文言", () => {
   expect(formatRate(0)).toBe("0.0%")
   expect(formatRate(54 / 351)).toBe("15.4%")
   expect(formatRate(1)).toBe("100.0%")
+})
+
+describe("selectTopRateJockeyIds", () => {
+  const condition = { racecourse: "東京", surface: "ダート", distanceBand: "短距離" }
+  const ready = (jockeyMasterId: number, winRate: number, placeRate = winRate): JockeyRecordLabel => ({
+    jockeyMasterId,
+    status: "ready",
+    winRate,
+    placeRate,
+    rides: 100,
+    condition,
+    conditionLabel: "東京・ダート・短距離",
+    isFallback: false,
+  })
+
+  test("勝率・複勝率それぞれで上位3人を選ぶ", () => {
+    const labels = [
+      ready(1, 0.2, 0.3),
+      ready(2, 0.15, 0.5),
+      ready(3, 0.1, 0.4),
+      ready(4, 0.05, 0.35),
+      ready(5, 0.12, 0.2),
+    ]
+
+    expect(selectTopRateJockeyIds(labels, "winRate")).toEqual(new Set([1, 2, 5]))
+    expect(selectTopRateJockeyIds(labels, "placeRate")).toEqual(new Set([2, 3, 4]))
+  })
+
+  test("3位に並んだ騎手はすべて含め、4位以下は含めない", () => {
+    const labels = [ready(1, 0.3), ready(2, 0.2), ready(3, 0.1), ready(4, 0.1), ready(5, 0.05)]
+
+    expect(selectTopRateJockeyIds(labels, "winRate")).toEqual(new Set([1, 2, 3, 4]))
+  })
+
+  test("2位に3人並べば、その下は4位扱いで含めない", () => {
+    const labels = [ready(1, 0.3), ready(2, 0.2), ready(3, 0.2), ready(4, 0.2), ready(5, 0.1)]
+
+    expect(selectTopRateJockeyIds(labels, "winRate")).toEqual(new Set([1, 2, 3, 4]))
+  })
+
+  test("表示（小数1桁の百分率）が同じなら同率として扱う", () => {
+    // 15.40% と 15.36% はどちらも 15.4% と表示される
+    const labels = [ready(1, 0.3), ready(2, 0.2), ready(3, 0.154), ready(4, 0.1536), ready(5, 0.1)]
+
+    expect(selectTopRateJockeyIds(labels, "winRate")).toEqual(new Set([1, 2, 3, 4]))
+  })
+
+  test("データなし・データ不足・0% は対象外で、残りが3人未満でもその人数だけ選ぶ", () => {
+    const labels: JockeyRecordLabel[] = [
+      ready(1, 0.1),
+      ready(2, 0),
+      { jockeyMasterId: 3, status: "insufficient" },
+      { jockeyMasterId: 4, status: "none" },
+    ]
+
+    expect(selectTopRateJockeyIds(labels, "winRate")).toEqual(new Set([1]))
+    expect(selectTopRateJockeyIds([], "placeRate")).toEqual(new Set())
+  })
+
+  test("条件を広げた（※）騎手の率も比べる", () => {
+    const labels = [{ ...ready(1, 0.3), isFallback: true }, ready(2, 0.2), ready(3, 0.1), ready(4, 0.05)]
+
+    expect(selectTopRateJockeyIds(labels, "winRate")).toEqual(new Set([1, 2, 3]))
+  })
 })

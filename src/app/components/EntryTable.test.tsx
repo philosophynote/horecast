@@ -229,3 +229,28 @@ test("騎手成績を渡さなければ（障害レース・取得失敗）成�
   expect(html).not.toContain("データなし")
   expect(html).toContain("min-w-[640px]")
 })
+
+test("レース内で勝率・複勝率それぞれ上位3位以内の率だけ大きく出し、脚注で説明する", () => {
+  const html = renderWithJockeyRecords(
+    [1, 2, 3, 4],
+    [
+      record(101, {}, { rides: 100, wins: 30, seconds: 5, thirds: 5 }), // 勝率30.0% 複勝率40.0%
+      record(102, {}, { rides: 100, wins: 20, seconds: 25, thirds: 15 }), // 勝率20.0% 複勝率60.0%
+      record(103, {}, { rides: 100, wins: 11, seconds: 20, thirds: 20 }), // 勝率11.0% 複勝率51.0%
+      record(104, {}, { rides: 100, wins: 5, seconds: 20, thirds: 20 }), // 勝率5.0% 複勝率45.0%
+    ],
+  )
+  const large = (name: string, rate: string) =>
+    `text-base font-bold" title="レース内の${name}上位3位以内">${rate}<`
+  const normal = (rate: string) => `font-semibold">${rate}<`
+
+  expect(html).toContain(large("勝率", "30.0%"))
+  expect(html).toContain(large("勝率", "20.0%"))
+  expect(html).toContain(large("勝率", "11.0%"))
+  expect(html).toContain(normal("5.0%"))
+  expect(html).toContain(large("複勝率", "60.0%"))
+  expect(html).toContain(large("複勝率", "51.0%"))
+  expect(html).toContain(large("複勝率", "45.0%"))
+  expect(html).toContain(normal("40.0%"))
+  expect(html).toContain("レース内で上位3位以内の率は大きく表示しています。")
+})

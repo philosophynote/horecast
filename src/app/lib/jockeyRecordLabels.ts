@@ -149,3 +149,29 @@ export function toJockeyRecordLabels(
 export function formatRate(rate: number): string {
   return `${(rate * 100).toFixed(1)}%`
 }
+
+/** 出馬表で率を大きく出す、レース内の上位人数 */
+export const TOP_RATE_COUNT = 3
+
+export type RateKey = "winRate" | "placeRate"
+
+/**
+ * レース内で率が上位 TOP_RATE_COUNT 位までの騎手IDを返す。
+ *
+ * - 比べるのは画面に出す小数1桁の百分率。表示が同じ値で強調が分かれないようにする
+ * - 同率は同順位とし（1, 2, 2, 4 …）、3位に並んだ騎手はすべて含める
+ * - 率を出していない騎手（データなし・データ不足）と 0% は対象外
+ * - 条件を広げた（※）値も画面に出す率なので含める
+ */
+export function selectTopRateJockeyIds(labels: JockeyRecordLabel[], key: RateKey): Set<number> {
+  const rated = labels.flatMap((label) => {
+    if (label.status !== "ready") return []
+    const value = Math.round(label[key] * 1000)
+    return value > 0 ? [{ jockeyMasterId: label.jockeyMasterId, value }] : []
+  })
+  return new Set(
+    rated
+      .filter((item) => rated.filter((other) => other.value > item.value).length < TOP_RATE_COUNT)
+      .map((item) => item.jockeyMasterId)
+  )
+}
