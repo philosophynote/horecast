@@ -51,7 +51,7 @@ export function HorseSearchForm({ filter }: { filter: TimeIndexFilter }) {
 }
 
 /** 指数の時系列。横軸は出走順で等間隔、100 に基準線。信頼度 低は白抜きの丸 */
-function TrendChart({ trend }: { trend: HorseTrend }) {
+export function TimeIndexTrendChart({ trend }: { trend: HorseTrend }) {
   const chart = buildTrendChart(trend.runs)
   if (!chart) {
     return <p className="py-6 text-center text-sm text-muted-foreground">指数が算出された走がありません</p>
@@ -176,7 +176,7 @@ export function TimeIndexHorseTrend({ filter, trend }: Props) {
         </div>
         <HorseSearchForm filter={filter} />
         {trend === null ? null : hasRuns ? (
-          <TrendChart trend={trend} />
+          <TimeIndexTrendChart trend={trend} />
         ) : trend.candidates.length > 0 ? (
           <div className="mt-4">
             <p className="mb-2 text-sm text-muted-foreground">「{trend.horseName}」に一致する馬はいません。名前に含む馬:</p>

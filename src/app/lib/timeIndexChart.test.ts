@@ -174,6 +174,8 @@ describe("馬ごとの推移", () => {
     expect(chart?.yTicks.some((t) => t.value === 100)).toBe(true)
     expect(chart?.baselineY).toBe(chart?.yTicks.find((t) => t.value === 100)?.y)
     expect(chart?.labels).toHaveLength(3)
+    expect(chart?.linePath.match(/M/g)).toHaveLength(2)
+    expect(chart?.linePath).not.toContain("L")
   })
 
   test("負の値や 130 超でも範囲に収まり、目盛りが増えすぎない", () => {

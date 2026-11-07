@@ -150,6 +150,7 @@ test("指標が無いときは指標の列を出さない", () => {
   expect(html).toContain("馬1")
   expect(html).toContain("騎手1")
   expect(html).toContain('href="/jockeys?jockey=101"')
+  expect(html).toContain('href="/time-index?horse=%E9%A6%AC1"')
 })
 
 const raceCondition = { racecourse: "東京", surface: "ダート", distanceBand: "短距離" }

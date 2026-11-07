@@ -1,4 +1,5 @@
-import { Prisma, type HorseTimeIndex } from "@prisma/client"
+import type { HorseTimeIndex, Prisma } from "@prisma/client"
+import { sqltag } from "@prisma/client/runtime/client"
 import { unstable_cache } from "next/cache"
 import { formatInTimeZone } from "date-fns-tz"
 import { prisma } from "@/lib/prisma"
@@ -15,6 +16,7 @@ import {
   raceNumberFromNetkeibaRaceId,
   sortByKnownOrder,
   toHistogramBins,
+  buildTimeIndexWhere,
   type HistogramBin,
   type TimeIndexFilter,
 } from "@/app/lib/timeIndexFilters"
@@ -61,7 +63,7 @@ async function findLinkedRaces(netkeibaRaceIds: string[]): Promise<Map<string, {
 }
 
 /** Decimal や Date を画面用の値に変換し、Race に存在する行にはレースIDを付ける */
-async function toTimeIndexRows(records: HorseTimeIndex[]): Promise<TimeIndexRow[]> {
+export async function toTimeIndexRows(records: HorseTimeIndex[]): Promise<TimeIndexRow[]> {
   const linked = await findLinkedRaces(records.map((record) => record.netkeiba_race_id))
   return records.map((record) => {
     const race = linked.get(record.netkeiba_race_id)
@@ -202,7 +204,7 @@ export async function getTimeIndexDistribution(
 ): Promise<TimeIndexDistribution> {
   const [histogram, aggregate, confidences] = await Promise.all([
     // 階級ごとの件数をDB側で数え、全期間を指定されても指数を全件取り出さないようにする
-    prisma.$queryRaw<Array<{ bucket: number; count: number }>>(Prisma.sql`
+    prisma.$queryRaw<Array<{ bucket: number; count: number }>>(sqltag`
       SELECT
         width_bucket("horecast_time_index_raw", ${HISTOGRAM_MIN}, ${HISTOGRAM_MAX}, ${HISTOGRAM_BIN_COUNT})::int AS bucket,
         count(*)::int AS count
@@ -257,21 +259,21 @@ export type HorseTrend = {
   candidates: string[]
 }
 
-export async function getHorseTrend(horseName: string, version: string | null): Promise<HorseTrend> {
-  const versionWhere = version ? { baseline_version: version } : {}
+export async function getHorseTrend(horseName: string, version: string | null, filter: TimeIndexFilter = { page: 1 }): Promise<HorseTrend> {
   const records = await prisma.horseTimeIndex.findMany({
-    where: { horse_name: horseName, ...versionWhere },
-    orderBy: [{ race_date: "asc" }, { netkeiba_race_id: "asc" }],
+    where: { ...buildTimeIndexWhere(filter, { startDate: filter.startDate, endDate: filter.endDate }, version), horse_name: horseName },
+    orderBy: [{ race_date: "desc" }, { netkeiba_race_id: "desc" }, { horse_number: "asc" }],
     take: HORSE_TREND_LIMIT,
   })
 
   if (records.length > 0) {
-    return { horseName, runs: await toTimeIndexRows(records), candidates: [] }
+    return { horseName, runs: await toTimeIndexRows(records.reverse()), candidates: [] }
   }
+  if (filter.horse) return { horseName, runs: [], candidates: [] }
 
   const candidates = await prisma.horseTimeIndex.groupBy({
     by: ["horse_name"],
-    where: { horse_name: { contains: horseName }, ...versionWhere },
+    where: { horse_name: { contains: horseName }, ...(version ? { baseline_version: version } : {}) },
     orderBy: { horse_name: "asc" },
     take: 20,
   })

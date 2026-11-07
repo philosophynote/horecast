@@ -4,6 +4,7 @@ import {
   CONFIDENCE_LABELS,
   CONFIDENCE_LEVELS,
   FILTER_PARAM_KEYS,
+  timeIndexHref,
   type Period,
   type TimeIndexFilter,
 } from "@/app/lib/timeIndexFilters"
@@ -66,6 +67,9 @@ export function TimeIndexFilterForm({ filter, options, period, version }: Props)
       className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] items-end gap-3 rounded-xl border border-border bg-card px-5 py-4"
     >
       {filter.horse && <input type="hidden" name={FILTER_PARAM_KEYS.horse} value={filter.horse} />}
+      {filter.q && <input type="hidden" name={FILTER_PARAM_KEYS.q} value={filter.q} />}
+      {filter.view && <input type="hidden" name={FILTER_PARAM_KEYS.view} value={filter.view} />}
+      {options.versions.length <= 1 && version && <input type="hidden" name={FILTER_PARAM_KEYS.version} value={version} />}
       <SelectField
         id="time-index-racecourse"
         name={FILTER_PARAM_KEYS.racecourse}
@@ -147,13 +151,14 @@ export function TimeIndexFilterForm({ filter, options, period, version }: Props)
         この条件で表示
       </button>
       <Link
-        href="/time-index"
+        href={timeIndexHref({ horse: filter.horse, view: filter.view, page: 1 })}
         className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-4 text-sm font-bold text-foreground transition-colors hover:bg-accent"
       >
         条件をリセット
       </Link>
       <p className="col-span-full text-xs text-muted-foreground">
-        期間を指定しないときは最新の開催日から1週間分を表示します。片方だけ指定するともう一方は無制限になります。
+        {filter.horse ? "期間を指定しないときは、この馬の収録全期間を表示します。" : "期間を指定しないときは最新の開催日から1週間分を表示します。"}片方だけ指定するともう一方は無制限になります。
+        {version && <span className="numeric ml-2">適用中の基準バージョン：{version}</span>}
       </p>
     </form>
   )

@@ -1,7 +1,8 @@
 import Link from "next/link"
 import type { TimeIndexRow } from "@/app/lib/timeIndex"
 import { TONE_TEXT_CLASS, timeIndexDeviation, timeIndexTone } from "@/app/lib/timeIndexChart"
-import { formatRaceTime, formatTimeIndex, timeIndexHref, type TimeIndexFilter } from "@/app/lib/timeIndexFilters"
+import { formatRaceTime, formatTimeIndex, type TimeIndexFilter } from "@/app/lib/timeIndexFilters"
+import { horseTimeIndexHref, timeIndexUnavailableReason } from "@/app/lib/horseTimeIndexDashboard"
 import { formatRaceDateShort } from "@/app/lib/raceList"
 import { ConfidencePill } from "./ConfidencePill"
 import { CourseTypeMark } from "./CourseTypeMark"
@@ -78,7 +79,7 @@ const ROW_CLASS =
 
 type Props = {
   rows: TimeIndexRow[]
-  /** 馬名リンクで推移表示に切り替えるとき、現在の絞り込みを引き継ぐ */
+  /** 馬別の履歴は複数年をまたぐため、開催日に年も表示する */
   filter: TimeIndexFilter
 }
 
@@ -108,7 +109,7 @@ export function TimeIndexTable({ rows, filter }: Props) {
         {rows.map((row) => (
           <div key={row.id} role="row" className={`${ROW_CLASS} border-b border-border py-2.5`}>
             <span role="cell" className="numeric text-muted-foreground">
-              <time dateTime={row.raceDate}>{formatRaceDateShort(row.raceDate)}</time>
+              <time dateTime={row.raceDate}>{filter.horse ? row.raceDate : formatRaceDateShort(row.raceDate)}</time>
             </span>
             <span role="cell" className="whitespace-nowrap">
               <RaceLinkCell row={row} />
@@ -118,7 +119,7 @@ export function TimeIndexTable({ rows, filter }: Props) {
             </span>
             <span role="cell" className="truncate">
               <Link
-                href={`${timeIndexHref(filter, { horse: row.horseName, page: 1 })}#horse-trend`}
+                href={`${horseTimeIndexHref(row.horseName)}#horse-trend`}
                 className="font-bold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
               >
                 {row.horseName}
@@ -138,6 +139,7 @@ export function TimeIndexTable({ rows, filter }: Props) {
             </span>
             <span role="cell">
               <ConfidencePill confidence={row.baselineConfidence} />
+              {row.timeIndex === null && <span className="mt-1 block break-words text-xs text-muted-foreground">{timeIndexUnavailableReason(row.unavailableReason)}</span>}
             </span>
           </div>
         ))}
