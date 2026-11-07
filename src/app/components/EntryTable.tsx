@@ -1,4 +1,5 @@
 import type { Entry, Predict, Result } from "@prisma/client"
+import Link from "next/link"
 import { formatInTimeZone } from "date-fns-tz"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
 import { type HorseIndicatorLabels, INSUFFICIENT_LABEL } from "@/app/lib/indicatorLabels"
@@ -16,6 +17,7 @@ import {
   TOP_RATE_COUNT,
 } from "@/app/lib/jockeyRecordLabels"
 import { buildOpenAiMarks, buildOriginalMarks, sortResults } from "@/app/lib/raceDetail"
+import { jockeyDashboardHref } from "@/app/lib/jockeyDashboard"
 import { FrameNumber } from "./FrameNumber"
 import { IndicatorMeter } from "./IndicatorMeter"
 import { TimeIndexSparkline } from "./TimeIndexSparkline"
@@ -233,7 +235,11 @@ export function EntryTable({
                   </TableCell>
                   <TableCell>
                     <span className="block whitespace-nowrap">
-                      {entry.JockeyMaster?.name ?? "不明"}{" "}
+                      {entry.JockeyMaster ? (
+                        <Link href={jockeyDashboardHref(entry.jockey_master_id)} className="underline decoration-border underline-offset-4 hover:text-primary">
+                          {entry.JockeyMaster.name}
+                        </Link>
+                      ) : "不明"}{" "}
                       <span className="numeric text-xs text-muted-foreground">{entry.jockey_weight}kg</span>
                     </span>
                     {showJockeyRecords && (
