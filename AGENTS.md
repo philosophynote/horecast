@@ -58,7 +58,7 @@ npm start            # 本番ビルドをローカルで起動
 
 ### APIルート
 
-- `/api/races` — 日付（`date=yyyy-MM-dd`、未指定なら直近の開催日）のレース一覧を `{ date, summary, races }` で返す。各レースに独自予想とOpenAIの◎、確定済みか、推奨馬券の投資・払戻・的中を含み、`summary` はその日の生成済み・確定済み件数と独自予想の回収率・収支。関連は1回の `findMany` でまとめて取る（純粋な変換は `src/app/lib/raceList.ts`）。CDN に当日以降は60秒、前日以前は1時間持たせる
+- `/api/races` — 日付（`date=yyyy-MM-dd`、未指定なら直近の開催日）のレース一覧を `{ date, summary, races }` で返す。各レースに独自予想とOpenAIの◎、確定済みか、推奨馬券の投資・払戻・的中を含み、`summary` はその日の生成済み・確定済み件数と独自予想の回収率・収支。関連は1回の `findMany` でまとめて取る（純粋な変換は `src/app/lib/raceList.ts`）。CDN に当日以降と日付未指定は60秒、前日以前の日付指定は1時間持たせる
 - `/api/races/[id]` — 関連データを含む単一レースの取得
 - `/api/races/[id]/navigation` — 前後レースのID取得
 - `/api/races/dates` — 開催日一覧の取得。CDN に60秒持たせる

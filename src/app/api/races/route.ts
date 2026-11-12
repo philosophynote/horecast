@@ -34,12 +34,14 @@ export async function GET(request: Request) {
   const dateParam = searchParams.get('date');
 
   let targetDate: Date
+  let requestedDate: Date | null = null
   if (dateParam !== null) {
     const parsed = parseRaceDateParam(dateParam)
     if (!parsed) {
       return NextResponse.json({ error: 'invalid date' }, { status: 400 })
     }
     targetDate = parsed
+    requestedDate = parsed
   } else {
     targetDate = await resolveDefaultDate()
   }
@@ -84,9 +86,9 @@ export async function GET(request: Request) {
     },
   });
 
-  // 既定（date なし）は当日以降を返すので短く持つ
+  // 日付の指定がないときは、次の開催が登録されると返す日付が変わるので短く持つ
   const today = raceDayRange(nowAsStoredClock(new Date())).start
   return NextResponse.json(buildRaceListResponse(start, races), {
-    headers: cdnCacheHeaders(raceListCachePolicy(start, today)),
+    headers: cdnCacheHeaders(raceListCachePolicy(requestedDate, today)),
   });
 }
