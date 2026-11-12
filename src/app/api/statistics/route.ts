@@ -13,6 +13,7 @@ import {
   toRaceStatisticsSummary,
 } from '@/app/lib/investmentStats'
 import { nowAsStoredClock, toStoredDateString } from '@/app/lib/raceList'
+import { SETTLED_SUMMARY_CACHE, cdnCacheHeaders } from '@/app/lib/cdnCache'
 
 export async function GET(request: NextRequest) {
   try {
@@ -92,7 +93,7 @@ export async function GET(request: NextRequest) {
         openai: modelStatistics(openAiRaceStatistics),
       },
     }
-    return NextResponse.json(response)
+    return NextResponse.json(response, { headers: cdnCacheHeaders(SETTLED_SUMMARY_CACHE) })
   } catch (error) {
     console.error('Error fetching statistics:', error)
     return NextResponse.json({ error: 'Failed to fetch statistics' }, { status: 500 })

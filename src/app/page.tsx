@@ -58,7 +58,8 @@ export default function Home() {
     let cancelled = false
     const fetchRaces = async (date: string) => {
       try {
-        const res = await fetch(`/api/races?date=${date}`, { cache: 'no-store' })
+        // CDN に持たせているので no-store は付けない。ブラウザは max-age=0 で毎回 CDN へ取りに行く
+        const res = await fetch(`/api/races?date=${date}`)
         if (!res.ok) {
           throw new Error('Failed to fetch races')
         }

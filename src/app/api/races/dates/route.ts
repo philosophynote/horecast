@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { LIVE_RACE_DATA_CACHE, cdnCacheHeaders } from '@/app/lib/cdnCache';
 
 export async function GET() {
   try {
@@ -34,7 +35,7 @@ export async function GET() {
       )
     );
 
-    return NextResponse.json(uniqueDates);
+    return NextResponse.json(uniqueDates, { headers: cdnCacheHeaders(LIVE_RACE_DATA_CACHE) });
   } catch (error) {
     console.error('Error fetching race dates:', error);
     return NextResponse.json({ error: 'Failed to fetch race dates' }, { status: 500 });
