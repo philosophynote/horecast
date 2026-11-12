@@ -92,8 +92,8 @@ export default async function TimeIndexPage({ searchParams }: { searchParams: Pr
       <TimeIndexScale />
     </section>
     <nav aria-label="タイム指数の表示方法" className="flex gap-2">
-      <Link href="/time-index" aria-current={all ? undefined : "page"} className={`min-h-11 rounded-lg border px-4 py-3 text-sm font-bold ${all ? "border-border hover:bg-accent" : "border-primary bg-primary text-primary-foreground"}`}>競走馬から探す</Link>
-      <Link href="/time-index?view=all" aria-current={all ? "page" : undefined} className={`min-h-11 rounded-lg border px-4 py-3 text-sm font-bold ${all ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent"}`}>全走データ</Link>
+      <Link href="/time-index" prefetch={false} aria-current={all ? undefined : "page"} className={`min-h-11 rounded-lg border px-4 py-3 text-sm font-bold ${all ? "border-border hover:bg-accent" : "border-primary bg-primary text-primary-foreground"}`}>競走馬から探す</Link>
+      <Link href="/time-index?view=all" prefetch={false} aria-current={all ? "page" : undefined} className={`min-h-11 rounded-lg border px-4 py-3 text-sm font-bold ${all ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-accent"}`}>全走データ</Link>
     </nav>
     {!all && <HorseTimeIndexSearch q={filter.q ?? filter.horse ?? ""} />}
     {error ? <p role="alert" className="rounded-xl border border-border bg-card p-5 text-negative">{error}</p> : all ? (

@@ -15,7 +15,7 @@ export function RaceLinkCell({ row }: { row: TimeIndexRow }) {
     return <span>{label}</span>
   }
   return (
-    <Link href={`/races/${row.raceId}`} className="text-primary hover:underline">
+    <Link href={`/races/${row.raceId}`} prefetch={false} className="text-primary hover:underline">
       {label}
     </Link>
   )
@@ -120,6 +120,7 @@ export function TimeIndexTable({ rows, filter }: Props) {
             <span role="cell" className="truncate">
               <Link
                 href={`${horseTimeIndexHref(row.horseName)}#horse-trend`}
+                prefetch={false}
                 className="font-bold text-foreground underline decoration-border underline-offset-4 hover:decoration-foreground"
               >
                 {row.horseName}

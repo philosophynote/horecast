@@ -45,8 +45,10 @@ type RaceRowProps = {
 export function RaceRow({ item, status }: RaceRowProps) {
   const pick = item.originalPick
   return (
+    // 一覧の行を全部先読みすると1画面で数十回レース詳細を取るので、クリックまで取らない
     <Link
       href={`/races/${item.id}`}
+      prefetch={false}
       className="grid min-h-11 grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 border-t border-border px-5 py-3 text-foreground transition-colors hover:bg-accent"
     >
       <div className="flex flex-col leading-tight">

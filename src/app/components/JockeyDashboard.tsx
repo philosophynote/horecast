@@ -130,7 +130,7 @@ export function JockeyDashboard({ jockey, records, filter }: {
             <FilterField name="surface" label="芝・ダート" value={filter.surface} choices={options.surfaces} allLabel="芝・ダートすべて" />
             <FilterField name="distanceBand" label="距離帯" value={filter.distanceBand} choices={options.distanceBands} allLabel="全距離" />
             <button type="submit" className="min-h-11 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground hover:opacity-90">この条件で表示</button>
-            <Link href={jockeyDashboardHref(jockey.id, filter.q)} className="col-span-full text-sm text-primary underline underline-offset-4">絞り込みをリセット</Link>
+            <Link href={jockeyDashboardHref(jockey.id, filter.q)} prefetch={false} className="col-span-full text-sm text-primary underline underline-offset-4">絞り込みをリセット</Link>
           </form>
 
           <section aria-labelledby="jockey-summary" className={SECTION_CLASS}>

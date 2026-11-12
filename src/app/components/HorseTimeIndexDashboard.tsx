@@ -34,7 +34,7 @@ export function HorseTimeIndexCandidates({ horses, hasMore, filter }: { horses: 
       {hasMore && <p className="mt-2 text-sm text-muted-foreground">候補が多いため先頭20件を表示しています。名前を追加して絞り込めます。</p>}
       <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {horses.map((horse) => <li key={horse.name}>
-          <Link href={timeIndexHref(filter, { horse: horse.name, view: "horses", page: 1 })} className="block min-h-12 rounded-lg border border-border px-4 py-3 hover:bg-accent">
+          <Link href={timeIndexHref(filter, { horse: horse.name, view: "horses", page: 1 })} prefetch={false} className="block min-h-12 rounded-lg border border-border px-4 py-3 hover:bg-accent">
             <span className="font-bold">{horse.name}</span>
             <span className="numeric mt-1 block text-xs text-muted-foreground">収録 {horse.firstDate} 〜 {horse.lastDate}</span>
           </Link>

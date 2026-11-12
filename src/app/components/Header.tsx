@@ -26,6 +26,7 @@ export function Header() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={item.prefetch}
                   aria-current={active ? "page" : undefined}
                   className={`border-b-2 px-3 pt-5 pb-4 text-sm transition-colors ${
                     active

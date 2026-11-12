@@ -185,6 +185,7 @@ export function TimeIndexHorseTrend({ filter, trend }: Props) {
                 <li key={name}>
                   <Link
                     href={`${timeIndexHref(filter, { horse: name, page: 1 })}#horse-trend`}
+                    prefetch={false}
                     className="inline-block rounded-lg border border-border px-3 py-1 text-sm text-primary transition-colors hover:bg-accent"
                   >
                     {name}
