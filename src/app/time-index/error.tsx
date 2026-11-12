@@ -8,7 +8,7 @@ export default function Error({ retry }: { retry: () => void }) {
     <p role="alert" className="text-muted-foreground">時間をおいて、もう一度お試しください。</p>
     <div className="flex flex-wrap gap-3">
       <button onClick={() => retry()} className="min-h-11 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground">再読み込み</button>
-      <Link href="/time-index" className="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm">競走馬検索へ戻る</Link>
+      <Link href="/time-index" prefetch={false} className="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm">競走馬検索へ戻る</Link>
     </div>
   </main>
 }

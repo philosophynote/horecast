@@ -228,7 +228,7 @@ export function EntryTable({
                     <Mark mark={openAi} />
                   </TableCell>
                   <TableCell className="min-w-0">
-                    {entry.HorseMaster ? <Link href={horseTimeIndexHref(entry.HorseMaster.name)} className="block truncate text-[15px] font-bold underline decoration-border underline-offset-4 hover:text-primary">{entry.HorseMaster.name}</Link> : <span className="block text-[15px] font-bold">不明</span>}
+                    {entry.HorseMaster ? <Link href={horseTimeIndexHref(entry.HorseMaster.name)} prefetch={false} className="block truncate text-[15px] font-bold underline decoration-border underline-offset-4 hover:text-primary">{entry.HorseMaster.name}</Link> : <span className="block text-[15px] font-bold">不明</span>}
                     <span className="block text-xs text-muted-foreground">
                       {entry.sex}
                       {entry.age}
@@ -237,7 +237,7 @@ export function EntryTable({
                   <TableCell>
                     <span className="block whitespace-nowrap">
                       {entry.JockeyMaster ? (
-                        <Link href={jockeyDashboardHref(entry.jockey_master_id)} className="underline decoration-border underline-offset-4 hover:text-primary">
+                        <Link href={jockeyDashboardHref(entry.jockey_master_id)} prefetch={false} className="underline decoration-border underline-offset-4 hover:text-primary">
                           {entry.JockeyMaster.name}
                         </Link>
                       ) : "不明"}{" "}

@@ -6,6 +6,7 @@ import {
   parseRaceDateParam,
   raceDayRange,
 } from '@/app/lib/raceList';
+import { cdnCacheHeaders, raceListCachePolicy } from '@/app/lib/cdnCache';
 
 /** 日付指定がないときは、今日（保存規約）以降で最も近い開催日、無ければ直近の過去 */
 async function resolveDefaultDate(): Promise<Date> {
@@ -83,5 +84,9 @@ export async function GET(request: Request) {
     },
   });
 
-  return NextResponse.json(buildRaceListResponse(start, races));
+  // 既定（date なし）は当日以降を返すので短く持つ
+  const today = raceDayRange(nowAsStoredClock(new Date())).start
+  return NextResponse.json(buildRaceListResponse(start, races), {
+    headers: cdnCacheHeaders(raceListCachePolicy(start, today)),
+  });
 }

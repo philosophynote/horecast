@@ -17,7 +17,7 @@ export function TimeIndexPagination({ filter, page }: Props) {
   return (
     <nav aria-label="ページ送り" className="flex justify-end gap-2">
       {hasPrev ? (
-        <Link href={`${timeIndexHref(filter, { page: page.page - 1 })}#list`} className={`${LINK_CLASS} text-foreground hover:bg-accent`}>
+        <Link href={`${timeIndexHref(filter, { page: page.page - 1 })}#list`} prefetch={false} className={`${LINK_CLASS} text-foreground hover:bg-accent`}>
           ← 前へ
         </Link>
       ) : (
@@ -26,7 +26,7 @@ export function TimeIndexPagination({ filter, page }: Props) {
         </span>
       )}
       {hasNext ? (
-        <Link href={`${timeIndexHref(filter, { page: page.page + 1 })}#list`} className={`${LINK_CLASS} text-foreground hover:bg-accent`}>
+        <Link href={`${timeIndexHref(filter, { page: page.page + 1 })}#list`} prefetch={false} className={`${LINK_CLASS} text-foreground hover:bg-accent`}>
           次へ →
         </Link>
       ) : (

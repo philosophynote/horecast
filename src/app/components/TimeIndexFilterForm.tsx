@@ -152,6 +152,7 @@ export function TimeIndexFilterForm({ filter, options, period, version }: Props)
       </button>
       <Link
         href={timeIndexHref({ horse: filter.horse, view: filter.view, page: 1 })}
+        prefetch={false}
         className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border px-4 text-sm font-bold text-foreground transition-colors hover:bg-accent"
       >
         条件をリセット

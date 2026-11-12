@@ -27,14 +27,14 @@ export function RaceNavigation({ prev, next, compact = false }: RaceNavigationPr
   return (
     <nav aria-label="前後のレース" className="flex justify-between gap-3">
       {prev ? (
-        <Link href={`/races/${prev.id}`} className={LINK_CLASS}>
+        <Link href={`/races/${prev.id}`} prefetch={false} className={LINK_CLASS}>
           ← {label(prev, compact)}
         </Link>
       ) : (
         <span />
       )}
       {next ? (
-        <Link href={`/races/${next.id}`} className={LINK_CLASS}>
+        <Link href={`/races/${next.id}`} prefetch={false} className={LINK_CLASS}>
           {label(next, compact)} →
         </Link>
       ) : (

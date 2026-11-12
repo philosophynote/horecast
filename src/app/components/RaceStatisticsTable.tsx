@@ -38,6 +38,7 @@ export function RaceStatisticsTable({ rows }: { rows: RaceStatisticsRow[] }) {
               <Link
                 key={row.raceId}
                 href={`/races/${row.raceId}`}
+                prefetch={false}
                 role="row"
                 className={`${ROW_CLASS} min-h-11 border-b border-border py-2.5 text-foreground transition-colors hover:bg-accent`}
               >

@@ -34,7 +34,7 @@ export default async function JockeysPage({ searchParams }: { searchParams: Prom
               <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {search.jockeys.map((candidate) => (
                   <li key={candidate.id}>
-                    <Link href={jockeyDashboardHref(candidate.id, filter.q)} className="flex min-h-12 items-center justify-between rounded-lg border border-border px-4 py-3 text-sm font-bold hover:bg-accent">
+                    <Link href={jockeyDashboardHref(candidate.id, filter.q)} prefetch={false} className="flex min-h-12 items-center justify-between rounded-lg border border-border px-4 py-3 text-sm font-bold hover:bg-accent">
                       {candidate.name}<span aria-hidden="true" className="text-primary">→</span>
                     </Link>
                   </li>

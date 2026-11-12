@@ -28,6 +28,7 @@ export function AiPickupList({ races }: AiPickupListProps) {
               <Link
                 key={race.id}
                 href={`/races/${race.id}`}
+                prefetch={false}
                 className="flex flex-col gap-3.5 rounded-xl border border-border bg-card p-5 text-foreground transition-colors hover:bg-accent"
               >
                 <div className="flex items-center justify-between gap-2">
