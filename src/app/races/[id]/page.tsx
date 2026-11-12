@@ -12,6 +12,7 @@ import {
   RacePredictionCommentsSkeleton,
 } from "@/app/components/RacePredictionComments"
 import { RaceResultTable } from "@/app/components/RaceResultTable"
+import { StaleRefresher } from "@/app/components/StaleRefresher"
 import { RecommendedBets, type RecommendedBetSection } from "@/app/components/RecommendedBets"
 import { getHorseIndicatorLabelsByRaceId } from "@/app/lib/horseIndicators"
 import { getJockeyRecordSummary } from "@/app/lib/jockeyRecords"
@@ -29,8 +30,18 @@ import {
   resolveSettlement,
 } from "@/app/lib/raceDetail"
 import { nowAsStoredClock } from "@/app/lib/raceList"
+import { RACE_PAGE_REVALIDATE_SECONDS } from "@/app/lib/staleRender"
 
 type PageProps = { params: Promise<{ id: string }> }
+
+// ISR にして CDN から返す。毎回の描画（約360KB）が Vercel の Fast Origin Transfer を食っていた。
+// 発走前の状態表示や払戻の反映は最大5分遅れる。値は RACE_PAGE_REVALIDATE_SECONDS と揃える
+export const revalidate = 300
+
+// ビルド時には作らず、初回アクセスで生成してキャッシュする
+export async function generateStaticParams(): Promise<{ id: string }[]> {
+  return []
+}
 
 // generateMetadata とページで同じ取得を共有する（同一リクエスト内で1回だけ実行される）
 const getRaceWithEntries = cache(async (id: number) =>
@@ -93,10 +104,12 @@ export default async function RacePage({ params }: PageProps) {
   ])
   const { indicators, predictionRanks, expectedPace } = indicatorResult
 
+  // ISR ではこの時刻が「描画した時点」になる。状態の判定と、古い描画の取り直しの両方に使う
+  const renderedAt = new Date()
   const isSettled = race.payouts.length > 0
   const settlement = resolveSettlement(
     { race_time: race.race_time, payoutCount: race.payouts.length },
-    nowAsStoredClock(new Date()),
+    nowAsStoredClock(renderedAt),
   )
 
   const originalMarks = buildOriginalMarks(race.predicts)
@@ -125,6 +138,7 @@ export default async function RacePage({ params }: PageProps) {
 
   return (
     <main className="container mx-auto flex min-h-screen flex-col gap-7 bg-background px-4 py-6">
+      <StaleRefresher renderedAt={renderedAt.toISOString()} maxAgeSeconds={RACE_PAGE_REVALIDATE_SECONDS} />
       <RaceHeader
         race={race}
         entryCount={race.entries.length}
