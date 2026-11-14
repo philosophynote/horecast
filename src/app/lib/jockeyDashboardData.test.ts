@@ -1,10 +1,13 @@
 import { beforeEach, expect, test, vi } from "vitest"
 import { getJockeyDashboardData, searchJockeys } from "./jockeyDashboardData"
-import { prisma } from "@/lib/prisma"
+import { getPrisma } from "@/lib/prisma"
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: { jockeyMaster: { findMany: vi.fn(), findUnique: vi.fn() } },
-}))
+vi.mock("@/lib/prisma", () => {
+  const prisma = { jockeyMaster: { findMany: vi.fn(), findUnique: vi.fn() } }
+  return { getPrisma: () => prisma }
+})
+
+const prisma = getPrisma()
 
 beforeEach(() => vi.resetAllMocks())
 

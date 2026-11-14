@@ -30,6 +30,10 @@ describe('raceListCachePolicy', () => {
     expect(raceListCachePolicy(new Date('2026-11-12T15:30:00.000Z'), today)).toBe(LIVE_RACE_DATA_CACHE)
   })
 
+  it('日付の指定がなければ短く持つ（直近の開催日が過去でも、次の開催が登録されると変わる）', () => {
+    expect(raceListCachePolicy(null, today)).toBe(LIVE_RACE_DATA_CACHE)
+  })
+
   it('未来の開催日も短く持つ', () => {
     expect(raceListCachePolicy(new Date('2026-11-15T00:00:00.000Z'), today)).toBe(LIVE_RACE_DATA_CACHE)
   })

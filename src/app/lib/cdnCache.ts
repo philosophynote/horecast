@@ -1,6 +1,6 @@
 /**
- * Vercel の CDN に API レスポンスを持たせるためのヘッダー。
- * 関数の実行と CDN ↔ 関数の転送（Fast Origin Transfer）を減らすのが目的。
+ * 手前の CDN に API レスポンスを持たせるためのヘッダー。関数の実行を減らすのが目的。
+ * Cloudflare Workers では Worker がキャッシュより手前で動くので、これだけでは CDN に残らない。
  *
  * - `CDN-Cache-Control` は CDN だけが読む。ブラウザには `Cache-Control` の max-age=0 を返し、
  *   画面を開き直せば CDN の最新を取りに行くようにする
@@ -31,10 +31,13 @@ export function cdnCacheHeaders(policy: CdnCachePolicy): Record<string, string> 
 }
 
 /**
- * レース一覧の持たせ方。指定日が今日（保存規約）より前なら長く、それ以外は短く持つ。
- * @param targetDate 一覧の対象日（保存規約の Date）
+ * レース一覧の持たせ方。日付を指定されて、それが今日（保存規約）より前なら長く、それ以外は短く持つ。
+ * 日付の指定がないときは「直近の開催日」を返すので、次の開催が登録されると答えが変わる。
+ * 解決した日付が過去でも短く持つ。
+ * @param requestedDate 指定された日付（保存規約の Date）。指定がなければ null
  * @param todayStored 保存規約の今日の 00:00
  */
-export function raceListCachePolicy(targetDate: Date, todayStored: Date): CdnCachePolicy {
-  return targetDate.getTime() < todayStored.getTime() ? PAST_RACE_DATA_CACHE : LIVE_RACE_DATA_CACHE
+export function raceListCachePolicy(requestedDate: Date | null, todayStored: Date): CdnCachePolicy {
+  if (requestedDate === null) return LIVE_RACE_DATA_CACHE
+  return requestedDate.getTime() < todayStored.getTime() ? PAST_RACE_DATA_CACHE : LIVE_RACE_DATA_CACHE
 }

@@ -1,0 +1,46 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "horecast",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  // nodejs_compat: pg と Prisma が Node.js の API を使う
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "services": [
+    {
+      // ISR の再生成で自分自身を呼ぶ。service は name と同じにする
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "horecast"
+    }
+  ],
+  "r2_buckets": [
+    {
+      // ISR（レース詳細）と unstable_cache の置き場。
+      // デプロイは Worker を上げる前にこのバケットへビルド時のキャッシュを書き込む。
+      // バケットが無ければその時点で作られるが、アカウントで R2 を有効にしておく必要がある
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "horecast-opennext-cache"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        // 期限切れページの再生成を重複なく1回ずつ流すキュー
+        "name": "NEXT_CACHE_DO_QUEUE",
+        "class_name": "DOQueueHandler"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["DOQueueHandler"]
+    }
+  ]
+}

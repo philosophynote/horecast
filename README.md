@@ -26,6 +26,8 @@ npm run build
 npm start
 ```
 
+本番は Cloudflare Workers で配信しています。デプロイの手順は [docs/deploy-cloudflare.md](docs/deploy-cloudflare.md) を参照してください。
+
 ## プロジェクト構成
 
 - **src/app/** – Next.js のページや API ルート、UI コンポーネントを配置

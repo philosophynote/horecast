@@ -1,6 +1,6 @@
 import type { Prisma } from "@prisma/client"
 import { formatInTimeZone } from "date-fns-tz"
-import { prisma } from "@/lib/prisma"
+import { getPrisma } from "@/lib/prisma"
 import { getHorseTrend, getTimeIndexPage, toTimeIndexRows } from "./timeIndex"
 import { buildTimeIndexWhere, type TimeIndexFilter } from "./timeIndexFilters"
 import { HORSE_NAME_MAX_LENGTH, HORSE_SEARCH_LIMIT, horseDashboardPeriod, recentTimeIndexAverage, summarizeDistanceBands } from "./horseTimeIndexDashboard"
@@ -28,7 +28,7 @@ function profile(row: { horse_name: string; _min: { race_date: Date | null }; _m
 export async function searchTimeIndexHorses(query: string) {
   const q = query.trim()
   if (!q || q.length > HORSE_NAME_MAX_LENGTH) return { horses: [], hasMore: false }
-  const rows = await prisma.horseTimeIndex.groupBy({
+  const rows = await getPrisma().horseTimeIndex.groupBy({
     ...profileSelection,
     where: { horse_name: { contains: q } },
     orderBy: { horse_name: "asc" },
@@ -39,7 +39,7 @@ export async function searchTimeIndexHorses(query: string) {
 
 export async function getTimeIndexHorseProfile(name: string): Promise<HorseTimeIndexProfile | null> {
   if (!name || name.length > HORSE_NAME_MAX_LENGTH) return null
-  const rows = await prisma.horseTimeIndex.groupBy({ ...profileSelection, where: { horse_name: name } })
+  const rows = await getPrisma().horseTimeIndex.groupBy({ ...profileSelection, where: { horse_name: name } })
   return rows[0] ? profile(rows[0]) : null
 }
 
@@ -64,6 +64,7 @@ export async function getHorseTimeIndexDashboard(filter: TimeIndexFilter & { hor
     horse_name: filter.horse,
   })
   const where = whereFor()
+  const prisma = getPrisma()
   const [summary, latest, best, page, trend, racecourses, surfaces, distances] = await Promise.all([
     prisma.horseTimeIndex.aggregate({
       ...aggregateSelection, where,

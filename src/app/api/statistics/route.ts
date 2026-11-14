@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 import { type BetStatistics, matchBetsWithPayouts, calculateStatistics, aggregateStatistics } from '@/app/lib/statistics'
 import { toHorsePredictionRanks } from '@/app/lib/horsePredictionRanks'
 import { buildRecommendedBetsFromRanks } from '@/app/lib/predictionRecommendations'
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 指定期間のレースを取得（両モデルの予想とペイアウト情報を含む）
-    const races = await prisma.race.findMany({
+    const races = await getPrisma().race.findMany({
       where: {
         race_time: { gte: range.start, lt: range.endExclusive },
         // 結果未確定のレースを不的中として集計しない

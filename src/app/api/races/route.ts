@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 import {
   buildRaceListResponse,
   nowAsStoredClock,
@@ -8,8 +8,10 @@ import {
 } from '@/app/lib/raceList';
 import { cdnCacheHeaders, raceListCachePolicy } from '@/app/lib/cdnCache';
 
+type PrismaClient = ReturnType<typeof getPrisma>
+
 /** 日付指定がないときは、今日（保存規約）以降で最も近い開催日、無ければ直近の過去 */
-async function resolveDefaultDate(): Promise<Date> {
+async function resolveDefaultDate(prisma: PrismaClient): Promise<Date> {
   const today = raceDayRange(nowAsStoredClock(new Date())).start
 
   const nextRace = await prisma.race.findFirst({
@@ -30,18 +32,21 @@ async function resolveDefaultDate(): Promise<Date> {
 }
 
 export async function GET(request: Request) {
+  const prisma = getPrisma()
   const { searchParams } = new URL(request.url);
   const dateParam = searchParams.get('date');
 
   let targetDate: Date
+  let requestedDate: Date | null = null
   if (dateParam !== null) {
     const parsed = parseRaceDateParam(dateParam)
     if (!parsed) {
       return NextResponse.json({ error: 'invalid date' }, { status: 400 })
     }
     targetDate = parsed
+    requestedDate = parsed
   } else {
-    targetDate = await resolveDefaultDate()
+    targetDate = await resolveDefaultDate(prisma)
   }
 
   const { start, end } = raceDayRange(targetDate)
@@ -84,9 +89,9 @@ export async function GET(request: Request) {
     },
   });
 
-  // 既定（date なし）は当日以降を返すので短く持つ
+  // 日付の指定がないときは、次の開催が登録されると返す日付が変わるので短く持つ
   const today = raceDayRange(nowAsStoredClock(new Date())).start
   return NextResponse.json(buildRaceListResponse(start, races), {
-    headers: cdnCacheHeaders(raceListCachePolicy(start, today)),
+    headers: cdnCacheHeaders(raceListCachePolicy(requestedDate, today)),
   });
 }

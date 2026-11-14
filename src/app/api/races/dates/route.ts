@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 import { LIVE_RACE_DATA_CACHE, cdnCacheHeaders } from '@/app/lib/cdnCache';
 
 export async function GET() {
@@ -11,7 +11,7 @@ export async function GET() {
     twoWeeksAgo.setUTCDate(twoWeeksAgo.getUTCDate() - 14);
 
     // レースが存在する日付の一覧を取得（重複なし、降順）
-    const raceDates = await prisma.race.findMany({
+    const raceDates = await getPrisma().race.findMany({
       where: {
         race_time: {
           not: null,

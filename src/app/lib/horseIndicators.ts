@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client"
-import { prisma } from "@/lib/prisma"
+import { getPrisma } from "@/lib/prisma"
 import { HorseIndicatorLabels, toHorseIndicatorLabels } from "@/app/lib/indicatorLabels"
 import {
   type HorsePredictionRank,
@@ -39,7 +39,7 @@ async function getHorseIndicatorLabelsByWhere(
   where: Prisma.HorseIndicatorWhereInput
 ): Promise<HorseIndicatorLabelsResult> {
   try {
-    const indicators = await prisma.horseIndicator.findMany({
+    const indicators = await getPrisma().horseIndicator.findMany({
       where,
       select: {
         horse_number: true,

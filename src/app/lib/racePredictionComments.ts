@@ -1,5 +1,5 @@
 import { RacePredictionComment } from "@prisma/client"
-import { prisma } from "@/lib/prisma"
+import { getPrisma } from "@/lib/prisma"
 import {
   parseRacePredictionWarnings,
   RacePredictionWarning,
@@ -65,7 +65,7 @@ export async function getRacePredictionComments(
   netkeibaRaceId: string
 ): Promise<RacePredictionCommentsResult> {
   try {
-    const comments = await prisma.racePredictionComment.findMany({
+    const comments = await getPrisma().racePredictionComment.findMany({
       where: { netkeiba_race_id: netkeibaRaceId },
     })
 
