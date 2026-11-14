@@ -19,10 +19,13 @@
       "service": "horecast"
     }
   ],
-  "kv_namespaces": [
+  "r2_buckets": [
     {
-      // ISR（レース詳細）と unstable_cache の置き場。id は初回デプロイで wrangler が作って紐づける
-      "binding": "NEXT_INC_CACHE_KV"
+      // ISR（レース詳細）と unstable_cache の置き場。
+      // デプロイは Worker を上げる前にこのバケットへビルド時のキャッシュを書き込む。
+      // バケットが無ければその時点で作られるが、アカウントで R2 を有効にしておく必要がある
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "horecast-opennext-cache"
     }
   ],
   "durable_objects": {
