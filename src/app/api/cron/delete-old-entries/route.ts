@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getPrisma } from '@/lib/prisma';
 
 function getOneMonthAgo(now: Date): Date {
   const targetMonthIndex = now.getMonth() - 1;
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const deletionCutoff = getOneMonthAgo(new Date());
 
   try {
-    const result = await prisma.entry.deleteMany({
+    const result = await getPrisma().entry.deleteMany({
       where: {
         created_at: {
           lt: deletionCutoff,

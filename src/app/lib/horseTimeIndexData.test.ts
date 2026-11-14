@@ -7,7 +7,7 @@ const { table, races } = vi.hoisted(() => ({
   table: { groupBy: vi.fn(), findMany: vi.fn(), findFirst: vi.fn(), aggregate: vi.fn(), count: vi.fn() },
   races: { findMany: vi.fn() },
 }))
-vi.mock("@/lib/prisma", () => ({ prisma: { horseTimeIndex: table, race: races } }))
+vi.mock("@/lib/prisma", () => ({ getPrisma: () => ({ horseTimeIndex: table, race: races }) }))
 vi.mock("next/cache", () => ({ unstable_cache: (fn: unknown) => fn }))
 
 const d = (day: string) => new Date(`${day}T00:00:00Z`)

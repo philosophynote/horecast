@@ -1,10 +1,10 @@
-import { prisma } from "@/lib/prisma"
+import { getPrisma } from "@/lib/prisma"
 import { JOCKEY_SEARCH_LIMIT } from "./jockeyDashboard"
 
 /** 空の検索ではマスター全件を取得しない。余分な1件は検索の絞り直し案内に使う。 */
 export async function searchJockeys(q: string) {
   if (!q) return { jockeys: [], hasMore: false }
-  const matches = await prisma.jockeyMaster.findMany({
+  const matches = await getPrisma().jockeyMaster.findMany({
     where: {
       OR: [
         { name: { contains: q, mode: "insensitive" } },
@@ -19,7 +19,7 @@ export async function searchJockeys(q: string) {
 }
 
 export async function getJockeyDashboardData(jockeyId: number) {
-  return prisma.jockeyMaster.findUnique({
+  return getPrisma().jockeyMaster.findUnique({
     where: { id: jockeyId },
     select: {
       id: true,

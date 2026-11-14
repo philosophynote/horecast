@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { Suspense, cache } from "react"
-import { prisma } from "@/lib/prisma"
+import { getPrisma } from "@/lib/prisma"
 import { AiVerdict } from "@/app/components/AiVerdict"
 import { EntryTable } from "@/app/components/EntryTable"
 import { PayoutTable } from "@/app/components/PayoutTable"
@@ -34,7 +34,7 @@ import { RACE_PAGE_REVALIDATE_SECONDS } from "@/app/lib/staleRender"
 
 type PageProps = { params: Promise<{ id: string }> }
 
-// ISR にしてキャッシュ（Workers KV）から返す。毎回の描画（約360KB）は配信先の無料枠を食う。
+// ISR にしてキャッシュ（R2）から返す。毎回の描画（約360KB）は配信先の無料枠を食う。
 // 発走前の状態表示や払戻の反映は最大5分遅れる。値は RACE_PAGE_REVALIDATE_SECONDS と揃える
 export const revalidate = 300
 
@@ -45,7 +45,7 @@ export async function generateStaticParams(): Promise<{ id: string }[]> {
 
 // generateMetadata とページで同じ取得を共有する（同一リクエスト内で1回だけ実行される）
 const getRaceWithEntries = cache(async (id: number) =>
-  prisma.race.findUnique({
+  getPrisma().race.findUnique({
     where: { id },
     include: {
       entries: { include: { HorseMaster: true, JockeyMaster: true } },
@@ -61,6 +61,7 @@ const getRaceWithEntries = cache(async (id: number) =>
 async function getNavigation(raceTime: Date | null): Promise<{ prev: AdjacentRace | null; next: AdjacentRace | null }> {
   if (!raceTime) return { prev: null, next: null }
   const select = { id: true, track: true, number: true, name: true } as const
+  const prisma = getPrisma()
   const [prev, next] = await Promise.all([
     prisma.race.findFirst({ where: { race_time: { lt: raceTime } }, orderBy: { race_time: "desc" }, select }),
     prisma.race.findFirst({ where: { race_time: { gt: raceTime } }, orderBy: { race_time: "asc" }, select }),

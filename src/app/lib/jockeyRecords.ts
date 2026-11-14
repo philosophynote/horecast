@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma"
+import { getPrisma } from "@/lib/prisma"
 import {
   ALL,
   isJockeyRecordTarget,
@@ -34,7 +34,7 @@ export async function getJockeyRecordSummary(
 
   try {
     // 落とし先に使う all 行まで含めて1回で取る（騎手1人あたり最大8行）
-    const rows = await prisma.jockeyRacecourseRecord.findMany({
+    const rows = await getPrisma().jockeyRacecourseRecord.findMany({
       where: {
         period: ALL,
         jockey_master_id: { in: [...new Set(jockeyMasterIds)] },

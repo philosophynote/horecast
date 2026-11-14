@@ -2,7 +2,7 @@ import type { HorseTimeIndex, Prisma } from "@prisma/client"
 import { sqltag } from "@prisma/client/runtime/client"
 import { unstable_cache } from "next/cache"
 import { formatInTimeZone } from "date-fns-tz"
-import { prisma } from "@/lib/prisma"
+import { getPrisma } from "@/lib/prisma"
 import {
   CONFIDENCE_LEVELS,
   GOING_ORDER,
@@ -55,7 +55,7 @@ function toNumber(value: Prisma.Decimal | null): number | null {
 
 async function findLinkedRaces(netkeibaRaceIds: string[]): Promise<Map<string, { id: number; number: number }>> {
   if (netkeibaRaceIds.length === 0) return new Map()
-  const races = await prisma.race.findMany({
+  const races = await getPrisma().race.findMany({
     where: { netkeiba_race_id: { in: Array.from(new Set(netkeibaRaceIds)) } },
     select: { id: true, number: true, netkeiba_race_id: true },
   })
@@ -108,6 +108,7 @@ export type TimeIndexFilterOptions = {
  */
 export const getTimeIndexFilterOptions = unstable_cache(
   async (): Promise<TimeIndexFilterOptions> => {
+    const prisma = getPrisma()
     const [combinations, versions, latest] = await Promise.all([
       prisma.horseTimeIndex.groupBy({
         by: ["racecourse", "surface", "distance", "class_name", "going"],
@@ -154,6 +155,7 @@ export type TimeIndexPage = {
 }
 
 export async function getTimeIndexPage(where: Prisma.HorseTimeIndexWhereInput, page: number): Promise<TimeIndexPage> {
+  const prisma = getPrisma()
   const [records, total] = await Promise.all([
     prisma.horseTimeIndex.findMany({
       where,
@@ -202,6 +204,7 @@ export async function getTimeIndexDistribution(
   where: Prisma.HorseTimeIndexWhereInput,
   whereSql: Prisma.Sql
 ): Promise<TimeIndexDistribution> {
+  const prisma = getPrisma()
   const [histogram, aggregate, confidences] = await Promise.all([
     // 階級ごとの件数をDB側で数え、全期間を指定されても指数を全件取り出さないようにする
     prisma.$queryRaw<Array<{ bucket: number; count: number }>>(sqltag`
@@ -260,6 +263,7 @@ export type HorseTrend = {
 }
 
 export async function getHorseTrend(horseName: string, version: string | null, filter: TimeIndexFilter = { page: 1 }): Promise<HorseTrend> {
+  const prisma = getPrisma()
   const records = await prisma.horseTimeIndex.findMany({
     where: { ...buildTimeIndexWhere(filter, { startDate: filter.startDate, endDate: filter.endDate }, version), horse_name: horseName },
     orderBy: [{ race_date: "desc" }, { netkeiba_race_id: "desc" }, { horse_number: "asc" }],
