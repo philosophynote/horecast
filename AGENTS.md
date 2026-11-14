@@ -7,7 +7,7 @@
 - `src/app/` — App Routerのページ、APIルート、UIコンポーネント
 - `src/app/api/**/route.ts` — サーバーエンドポイント（レース一覧・レース詳細・前後ナビゲーション・統計・不要データ削除のcron）
 - `src/app/components/` — 機能単位のコンポーネント。`src/app/components/ui/` は再利用するUIプリミティブ
-- `src/app/lib/` と `src/lib/` — 共有ヘルパー（`src/lib/prisma.ts` がPrismaクライアント）
+- `src/app/lib/` と `src/lib/` — 共有ヘルパー（`src/lib/prisma.ts` の `getPrisma()` がPrismaクライアント）
 - `prisma/` — スキーマ（`schema.prisma`）とマイグレーション。接続とマイグレーションの設定は `prisma.config.ts`
 - `public/` — 静的ファイル（画像、アイコン、`public/data/` 配下のJSON）
 - `docs/` — 設計ドキュメント（アーキテクチャ、機能設計、開発ガイドラインなど）
@@ -31,7 +31,7 @@ npm run cf:deploy    # ビルドして Cloudflare へデプロイ
 
 Cloudflare Workers で配信する（OpenNext の `@opennextjs/cloudflare`）。`main` への push で Cloudflare 側のビルドが走る。設定は `wrangler.jsonc` と `open-next.config.ts`、手順と無料プランの上限は `docs/deploy-cloudflare.md`。
 
-- `src/lib/prisma.ts` の `maxUses: 1` は外さない。Workers では接続をリクエストをまたいで使い回せず、外すと DB を使う2回目以降のリクエストが応答しなくなる
+- DB は `getPrisma()`（`src/lib/prisma.ts`）で使う。Workers では接続を別のリクエストから使えないので、クライアントと接続プールをリクエストごとに作る。サーバーコンポーネントの描画中は同じクライアントが返るが、ルートハンドラでは呼ぶたびに新しく作るので、先頭で1回だけ呼ぶ。モジュールの直下に置いて使い回さない。`maxUses: 1` と接続数の上限（`max`）は外さない
 - Worker のサイズは gzip 後 3 MiB まで（無料プラン）。依存を足したら `npx wrangler deploy --dry-run --outdir <出力先>` でサイズを確かめる
 - Next.js を上げるときは `@opennextjs/cloudflare` の peerDependencies の範囲に収める
 
@@ -79,7 +79,7 @@ Cloudflare Workers で配信する（OpenNext の `@opennextjs/cloudflare`）。
 ### ページ構成
 
 - **トップページ**（`/`）— クライアントコンポーネント。開催日を横並びボタンで選び、本日のサマリー・AIピックアップ（両モデルの本命が一致した発走前のレース）・競馬場ごとのレース行（◎と的中／払戻／次に発走などの状態）を表示する。統計は `/statistics` へ
-- **レース詳細**（`/races/[id]`）— サーバーコンポーネント。レース情報（想定ペース・状態・前後レース）、AIの結論（独自予想とOpenAIの印の比較と本命一致）、出馬表とAI指標（5段目盛り・直近5走のタイム指数）、AI予想コメント、推奨馬券（モデル切替）、確定後は結果と払戻を表示する。ISR（`revalidate = 300`、ビルド時には作らず初回アクセスで生成）にして、Workers KV のキャッシュから返す。期限切れのページはまず古い描画が返るので、`StaleRefresher` が描画時刻を見て1回だけ取り直す。id が不正・該当なしは `notFound()` で HTTP 404
+- **レース詳細**（`/races/[id]`）— サーバーコンポーネント。レース情報（想定ペース・状態・前後レース）、AIの結論（独自予想とOpenAIの印の比較と本命一致）、出馬表とAI指標（5段目盛り・直近5走のタイム指数）、AI予想コメント、推奨馬券（モデル切替）、確定後は結果と払戻を表示する。ISR（`revalidate = 300`、ビルド時には作らず初回アクセスで生成）にして、R2 のキャッシュから返す。期限切れのページはまず古い描画が返るので、`StaleRefresher` が描画時刻を見て1回だけ取り直す。id が不正・該当なしは `notFound()` で HTTP 404
 - **投資成績**（`/statistics`）— 見出しはサーバーで描き、`InvestmentDashboard`（クライアント）が `/api/statistics` を取る。期間（7日／30日／90日と開始日・終了日）とモデル（独自予想／OpenAI）を切り替え、回収率・収支・的中率、累積収支の折れ線（Recharts）、券種別・競馬場別、レースごとの成績を表示する
 - **タイム指数**（`/time-index`）— サーバーコンポーネント。馬名の部分一致検索と候補選択を入口に、選択した馬のタイム指数サマリー・直近100走の推移・競馬場別／芝ダート別／距離帯別の内訳・50件ずつの走別履歴を表示する。履歴と集計は `HorseTimeIndex.horse_name` の完全一致で取得し、馬別表示は収録全期間と最新の基準バージョンを既定にする。選択条件はURLに保持し、条件別内訳では比較する軸だけ絞り込みを外す。「全走データ」（`view=all`）には既存の一覧・分布を残し、最新開催日から1週間を既定にする。`Race` に存在する走だけレース詳細へリンクする。詳しくは `docs/time-index-dashboard.md`
 
@@ -103,7 +103,7 @@ Cloudflare Workers で配信する（OpenNext の `@opennextjs/cloudflare`）。
 Worker の実行は1日10万リクエスト・1回 CPU 10ms までで、超えるとエラーになる。Vercel では関数が返したデータ量（Fast Origin Transfer、月10GB）を使い切って停止された。配信先によらず、Worker（関数）を通る回数と量を増やさない。
 
 - **先読みを止める** — 関数で描画するページ（`/races/[id]` `/time-index` `/jockeys`）への `<Link>` には `prefetch={false}` を付ける。一覧や表では行の数だけ先読みが走る。静的なページ（`/` `/statistics`）への `<Link>` は既定のままでよい
-- **重いページはキャッシュする** — 利用者ごとに変わらないページは ISR にして KV から返す。キャッシュ済みのページは Next.js のサーバーを起こさずに返るので CPU 時間を使わない
+- **重いページはキャッシュする** — 利用者ごとに変わらないページは ISR にして R2 から返す。キャッシュ済みのページは Next.js のサーバーを起こさずに返るので CPU 時間を使わない
 - **クローラー** — `src/app/robots.ts` で AI クローラーをサイト全体から、その他のクローラーを `/api/` `/time-index` `/jockeys` から外している。検索条件で URL が無数に増える画面を足したら `DISALLOWED_PATHS` に加える。`robots.txt` を守らないクローラーは Cloudflare 側のボット対策で止める
 
 ### スタイリングとUI
