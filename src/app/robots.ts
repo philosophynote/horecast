@@ -1,9 +1,9 @@
 import type { MetadataRoute } from "next"
 
 /**
- * AI の学習・検索用クローラー。サイト全体を辿られると Vercel の無料枠
- * （Fast Origin Transfer）を使い切るので、まとめて断る。
- * robots.txt を守らないクローラーは Vercel Firewall の AI Bots ルールで止める
+ * AI の学習・検索用クローラー。サイト全体を辿られると配信先の無料枠を使い切りうる
+ * （Vercel では無料枠の超過で停止された）ので、まとめて断る。
+ * robots.txt を守らないクローラーは Cloudflare 側のボット対策で止める
  */
 export const AI_CRAWLERS = [
   "GPTBot",

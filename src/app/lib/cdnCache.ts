@@ -1,6 +1,6 @@
 /**
- * Vercel の CDN に API レスポンスを持たせるためのヘッダー。
- * 関数の実行と CDN ↔ 関数の転送（Fast Origin Transfer）を減らすのが目的。
+ * 手前の CDN に API レスポンスを持たせるためのヘッダー。関数の実行を減らすのが目的。
+ * Cloudflare Workers では Worker がキャッシュより手前で動くので、これだけでは CDN に残らない。
  *
  * - `CDN-Cache-Control` は CDN だけが読む。ブラウザには `Cache-Control` の max-age=0 を返し、
  *   画面を開き直せば CDN の最新を取りに行くようにする

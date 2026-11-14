@@ -34,7 +34,7 @@ import { RACE_PAGE_REVALIDATE_SECONDS } from "@/app/lib/staleRender"
 
 type PageProps = { params: Promise<{ id: string }> }
 
-// ISR にして CDN から返す。毎回の描画（約360KB）が Vercel の Fast Origin Transfer を食っていた。
+// ISR にしてキャッシュ（Workers KV）から返す。毎回の描画（約360KB）は配信先の無料枠を食う。
 // 発走前の状態表示や払戻の反映は最大5分遅れる。値は RACE_PAGE_REVALIDATE_SECONDS と揃える
 export const revalidate = 300
 
