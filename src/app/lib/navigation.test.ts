@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { isActiveNavPath } from "./navigation"
+import { isActiveNavPath, NAV_ITEMS } from "./navigation"
 
 describe("isActiveNavPath", () => {
   test("レース一覧はトップとレース詳細で現在地になる", () => {
@@ -21,5 +21,11 @@ describe("isActiveNavPath", () => {
 
   test("前方一致だけでは現在地にならない", () => {
     expect(isActiveNavPath("/time-indexes", "/time-index")).toBe(false)
+  })
+})
+
+describe("NAV_ITEMS", () => {
+  test("/time-index のタブ名は競走馬データ", () => {
+    expect(NAV_ITEMS.find((item) => item.href === "/time-index")?.label).toBe("競走馬データ")
   })
 })
